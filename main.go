@@ -1,4 +1,4 @@
-package mas
+package main
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 
 
-func init() {
+func main() {
 	http.HandleFunc("/api/v1/users/weekly_plan", handleGetWeeklyPlan)
 	http.HandleFunc("/api/v1/users/shopping_list", handleGetShoppingList)
 	http.HandleFunc("/api/v1/recipes/recipe_steps", handleGetRecipeSteps)
@@ -17,4 +17,8 @@ func init() {
 
 	err := http.ListenAndServe(":8080", nil)
 	fmt.Println(err.Error())
+}
+
+func init() {
+	main()
 }

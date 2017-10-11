@@ -1,15 +1,13 @@
-package main
+package mas
 
 import (
 	"fmt"
 	"net/http"
-	"google.golang.org/appengine"
 )
 
 
 
-func main() {
-	appengine.Main()
+func init() {
 	http.HandleFunc("/api/v1/weekly_plan", handleGetWeeklyPlan)
 	http.HandleFunc("/", handler)
 

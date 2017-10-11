@@ -1,4 +1,4 @@
-package main
+package mas
 
 import (
 	"net/http"
@@ -16,3 +16,4 @@ func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 
 	fmt.Fprintf(w, "Hello User %s! Your weekly plan is: _____", userID)
 }
+

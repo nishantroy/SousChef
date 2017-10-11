@@ -30,7 +30,7 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 
 	// Make call to API or to Database here, and then write out results
 
-	fmt.Fprintf(w, "Hello! The steps for recipe %d are: _____", recipeID)
+	fmt.Fprintf(w, "Hello! The steps for recipe %s are: _____", recipeID)
 }
 
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
@@ -38,5 +38,5 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 
 	// Make call to API or to Database here, and then write out results
 
-	fmt.Fprintf(w, "Hello! The details for recipe %d are: _____", recipeID)
+	fmt.Fprintf(w, "Hello! The details for recipe %s are: _____", recipeID)
 }

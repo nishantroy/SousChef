@@ -1,13 +1,11 @@
-package main
+package mas
 
 import (
 	"fmt"
 	"net/http"
 )
 
-
-
-func main() {
+func init() {
 
 	// User Handlers
 	http.HandleFunc("/api/v1/users/weekly_plan", handleGetWeeklyPlan)

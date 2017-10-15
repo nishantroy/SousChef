@@ -1,10 +1,14 @@
-package main
+package mas
 
 import (
-	"net/http"
 	"fmt"
 	"gopkg.in/zabawaba99/firego.v1"
+	"net/http"
+
 	"encoding/json"
+
+	"google.golang.org/appengine/urlfetch"
+	"google.golang.org/appengine"
 )
 
 const (
@@ -12,12 +16,8 @@ const (
 	authToken string = "4maH9UaAtODP5C64FUCpn51Y6kaKSjeSCIHuPZ5y"
 )
 
-var (
-	f = firego.New(fireURL, nil)
-)
-
 type User struct {
-	Name    string `json:"name"`
+	Name    string      `json:"name"`
 	Recipes interface{} `json:"recipes"`
 }
 
@@ -29,13 +29,17 @@ func handler(w http.ResponseWriter, req *http.Request) {
 func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 	userID := req.URL.Query().Get("user_id")
 
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
 	// Make call to API or to Database here, and then write out results
-	user := &User{}
+	var user interface{}
 
 	f.Auth(authToken)
-	
-	if err := f.Child("users/" + userID).Value(user); err != nil {
-		fmt.Print(w, err)
+
+	if err := f.Child("users/" + userID).Value(&user); err != nil {
+		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
 	}
 
 	json.NewEncoder(w).Encode(user)

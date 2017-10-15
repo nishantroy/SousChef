@@ -9,11 +9,12 @@ import (
 
 	"google.golang.org/appengine/urlfetch"
 	"google.golang.org/appengine"
+	"os"
 )
 
-const (
-	fireURL string = "https://souschef-182502.firebaseio.com"
-	authToken string = "4maH9UaAtODP5C64FUCpn51Y6kaKSjeSCIHuPZ5y"
+var (
+	fireURL string = os.Getenv("FIREBASE_URL")
+	authToken string = os.Getenv("FIREBASE_AUTH_TOKEN")
 )
 
 type User struct {

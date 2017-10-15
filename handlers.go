@@ -47,11 +47,11 @@ func handler(w http.ResponseWriter, req *http.Request) {
 func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 	userID := req.URL.Query().Get("user_id")
 
+	// Make call to API or to Database here, and then write out results
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
 	f := firego.New(fireURL, client)
 
-	// Make call to API or to Database here, and then write out results
 	var user interface{}
 
 	f.Auth(authToken)
@@ -98,4 +98,9 @@ func temp(w http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Print(json.NewEncoder(w).Encode(user))
+
+	//
+	//if err := f.Child("users/1/meals/noday").Set(x); err != nil {
+	//	fmt.Print("SOME ERROR OCCURRED\n", err)
+	//}
 }

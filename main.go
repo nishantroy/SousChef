@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"net/http"
 )
 
 func main() {
-	//temp()
 
-	 //User Handlers
+	//User Handlers
 	http.HandleFunc("/api/v1/users/weekly_plan", handleGetWeeklyPlan)
 	http.HandleFunc("/api/v1/users/shopping_list", handleGetShoppingList)
 
@@ -18,9 +17,5 @@ func main() {
 
 	// Default
 	http.HandleFunc("/", temp)
-
-	// Start routing
-	err := http.ListenAndServe(":8080", nil)
-
-	fmt.Println(err.Error())
+	//temp()
 }

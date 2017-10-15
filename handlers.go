@@ -1,4 +1,4 @@
-package main
+package mas
 
 import (
 	"fmt"
@@ -17,28 +17,6 @@ var (
 	authToken string = os.Getenv("FIREBASE_AUTH_TOKEN")
 )
 
-type User struct {
-	Name string `json:"name"`
-	//Meals interface{} `json:"meals"`
-	WeeklyPlan map[string]DailyPlan `json:"weekly_plan"`
-	Diet       []string             `json:"diet"`
-	Exclusions []string             `json:"exclusions"`
-}
-
-type DailyPlan struct {
-	Breakfast Meal               `json:"breakfast"`
-	Lunch     Meal               `json:"lunch"`
-	Dinner    Meal               `json:"dinner"`
-	Nutrition map[string]float32 `json:"nutrients"`
-}
-
-type Meal struct {
-	RecipeID    int    `json:"recipe_id"`
-	RecipeTitle string `json:"recipe_title"`
-	RecipeImage string `json:"recipe_image"`
-	CookTime    int    `json:"ready_in_minutes"`
-}
-
 func handler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(w, "Welcome to the SousChef API!")
 
@@ -52,7 +30,7 @@ func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 	client := urlfetch.Client(ctx)
 	f := firego.New(fireURL, client)
 
-	var user interface{}
+	var user User
 
 	f.Auth(authToken)
 

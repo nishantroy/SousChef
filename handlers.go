@@ -1,4 +1,4 @@
-package mas
+package main
 
 import (
 	"fmt"
@@ -13,13 +13,30 @@ import (
 )
 
 var (
-	fireURL string = os.Getenv("FIREBASE_URL")
+	fireURL   string = os.Getenv("FIREBASE_URL")
 	authToken string = os.Getenv("FIREBASE_AUTH_TOKEN")
 )
 
 type User struct {
-	Name    string      `json:"name"`
-	Recipes interface{} `json:"recipes"`
+	Name string `json:"name"`
+	//Meals interface{} `json:"meals"`
+	WeeklyPlan map[string]DailyPlan `json:"weekly_plan"`
+	Diet       []string             `json:"diet"`
+	Exclusions []string             `json:"exclusions"`
+}
+
+type DailyPlan struct {
+	Breakfast Meal               `json:"breakfast"`
+	Lunch     Meal               `json:"lunch"`
+	Dinner    Meal               `json:"dinner"`
+	Nutrition map[string]float32 `json:"nutrients"`
+}
+
+type Meal struct {
+	RecipeID    int    `json:"recipe_id"`
+	RecipeTitle string `json:"recipe_title"`
+	RecipeImage string `json:"recipe_image"`
+	CookTime    int    `json:"ready_in_minutes"`
 }
 
 func handler(w http.ResponseWriter, req *http.Request) {
@@ -68,4 +85,17 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	// Make call to API or to Database here, and then write out results
 
 	fmt.Fprintf(w, "Hello! The details for recipe %s are: _____", recipeID)
+}
+
+func temp(w http.ResponseWriter, req *http.Request) {
+	var user User
+
+	f := firego.New("https://souschef-182502.firebaseio.com", nil)
+	f.Auth("4maH9UaAtODP5C64FUCpn51Y6kaKSjeSCIHuPZ5y")
+
+	if err := f.Child("users/1").Value(&user); err != nil {
+		fmt.Print("ERROR OCCURRED \n", err)
+	}
+
+	fmt.Print(json.NewEncoder(w).Encode(user))
 }

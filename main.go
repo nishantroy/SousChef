@@ -1,13 +1,14 @@
-package mas
+package main
 
 import (
 	"fmt"
 	"net/http"
 )
 
-func init() {
+func main() {
+	//temp()
 
-	// User Handlers
+	 //User Handlers
 	http.HandleFunc("/api/v1/users/weekly_plan", handleGetWeeklyPlan)
 	http.HandleFunc("/api/v1/users/shopping_list", handleGetShoppingList)
 
@@ -16,7 +17,7 @@ func init() {
 	http.HandleFunc("/api/v1/recipes/recipe_details", handleGetRecipeDetails)
 
 	// Default
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", temp)
 
 	// Start routing
 	err := http.ListenAndServe(":8080", nil)

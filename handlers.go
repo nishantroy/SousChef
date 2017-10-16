@@ -7,14 +7,15 @@ import (
 
 	"encoding/json"
 
-	"google.golang.org/appengine/urlfetch"
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/urlfetch"
 	"os"
 )
 
 var (
-	fireURL   string = os.Getenv("FIREBASE_URL")
-	authToken string = os.Getenv("FIREBASE_AUTH_TOKEN")
+	fireURL    = os.Getenv("FIREBASE_URL")
+	fireToken  = os.Getenv("FIREBASE_AUTH_TOKEN")
+	spoonToken = os.Getenv("SPOONACULAR_AUTH_TOKEN")
 )
 
 func handler(w http.ResponseWriter, req *http.Request) {
@@ -32,7 +33,7 @@ func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 
 	var user User
 
-	f.Auth(authToken)
+	f.Auth(fireToken)
 
 	if err := f.Child("users/" + userID).Value(&user); err != nil {
 		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
@@ -45,8 +46,19 @@ func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
 	userID := req.URL.Query().Get("user_id")
 
 	// Make call to API or to Database here, and then write out results
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
 
-	fmt.Fprintf(w, "Hello User %s! Your shopping list is: _____", userID)
+	var user User
+
+	f.Auth(fireToken)
+
+	if err := f.Child("users/" + userID).Value(&user); err != nil {
+		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
+	}
+
+	json.NewEncoder(w).Encode(user)
 }
 
 func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
@@ -60,25 +72,59 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
-	// Make call to API or to Database here, and then write out results
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
 
-	fmt.Fprintf(w, "Hello! The details for recipe %s are: _____", recipeID)
-}
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
 
-func temp(w http.ResponseWriter, req *http.Request) {
-	var user User
+	request, err := http.NewRequest("GET", url, nil)
 
-	f := firego.New("https://souschef-182502.firebaseio.com", nil)
-	f.Auth("4maH9UaAtODP5C64FUCpn51Y6kaKSjeSCIHuPZ5y")
-
-	if err := f.Child("users/1").Value(&user); err != nil {
-		fmt.Print("ERROR OCCURRED \n", err)
+	if err != nil {
+		fmt.Fprint(w, "ERROR: ", err)
 	}
 
-	fmt.Print(json.NewEncoder(w).Encode(user))
+	request.Header.Set("X-Mashape-Key", spoonToken)
 
-	//
-	//if err := f.Child("users/1/meals/noday").Set(x); err != nil {
-	//	fmt.Print("SOME ERROR OCCURRED\n", err)
-	//}
+	res, err := client.Do(request)
+
+	if err != nil {
+		fmt.Print("ERROR: ", err)
+	}
+
+	var recipe Recipe
+
+	defer res.Body.Close()
+	json.NewDecoder(res.Body).Decode(&recipe)
+
+	// Make call to API or to Database here, and then write out results
+
+	json.NewEncoder(w).Encode(recipe)
+
+}
+
+func handleStaticRecipeDetails(w http.ResponseWriter, req *http.Request) {
+
+	var recipe Recipe
+
+	recipe.Title = "Leek & Cheese Pie"
+	recipe.CookTime = 75
+	recipe.ID = 116679
+	recipe.Image = "https://spoonacular.com/recipeImages/116679-556x370.jpg"
+	recipe.Cheap = false
+	recipe.Vegetarian = true
+	recipe.Vegan = false
+	recipe.Ketogenic = false
+	recipe.Servings = 4
+
+	recipe.Ingredients = []Ingredient{
+		{ID: 18371, Category: "Baking", Name: "baking powder", Amount: 2, Unit: "tsp",
+			FullDescriptor: "2 teaspoons baking powder"},
+		{ID: 1001, Category: "Milk, Eggs, Other Dairy", Name: "butter", Amount: 100, Unit: "g",
+			FullDescriptor: "100 g butter or 100 g margarine"},
+		{ID: 2031, Category: "Spices and Seasonings", Name: "cayenne pepper", Amount: 4,
+			Unit: "servings", FullDescriptor: "cayenne pepper"},
+	}
+
+	json.NewEncoder(w).Encode(recipe)
+
 }

@@ -69,10 +69,13 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "Hello! The steps for recipe %s are: _____", recipeID)
 }
 
+// Gets ingredients, dietary restrictions, servings, name, etc. No steps
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
+	//url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/informationBulk?ids=" + recipeID+"&includeNutrition=true"
+
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
@@ -91,14 +94,14 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 		fmt.Print("ERROR: ", err)
 	}
 
-	var recipe Recipe
+	var recipes []Recipe
 
 	defer res.Body.Close()
-	json.NewDecoder(res.Body).Decode(&recipe)
+	json.NewDecoder(res.Body).Decode(&recipes)
 
 	// Make call to API or to Database here, and then write out results
 
-	json.NewEncoder(w).Encode(recipe)
+	json.NewEncoder(w).Encode(recipes)
 
 }
 

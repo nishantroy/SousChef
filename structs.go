@@ -26,21 +26,32 @@ type Meal struct {
 
 // Recipe defines the fields for a recipe
 type Recipe struct {
-	Ingredients  []Ingredient `json:"extendedIngredients"`
-	ID           int          `json:"id"`
-	Title        string       `json:"title"`
-	CookTime     int          `json:"readyInMinutes"`
-	Image        string       `json:"image"`
-	Instructions []string     `json:"instructions"`
-	Vegetarian   bool         `json:"vegetarian"`
-	Vegan        bool         `json:"vegan"`
-	GlutenFree   bool         `json:"glutenFree"`
-	DairyFree    bool         `json:"dairyFree"`
-	Cheap        bool         `json:"cheap"`
-	LowFodmap    bool         `json:"lowFodmap"`
-	Ketogenic    bool         `json:"ketogenic"`
-	Whole30      bool         `json:"whole30"`
-	Servings     int          `json:"servings"`
+	Ingredients  []Ingredient  `json:"extendedIngredients"`
+	ID           int           `json:"id"`
+	Title        string        `json:"title"`
+	CookTime     int           `json:"readyInMinutes"`
+	Image        string        `json:"image"`
+	Instructions []Instruction `json:"analyzedInstructions"`
+	Vegetarian   bool          `json:"vegetarian"`
+	Vegan        bool          `json:"vegan"`
+	GlutenFree   bool          `json:"glutenFree"`
+	DairyFree    bool          `json:"dairyFree"`
+	Cheap        bool          `json:"cheap"`
+	LowFodmap    bool          `json:"lowFodmap"`
+	Ketogenic    bool          `json:"ketogenic"`
+	Whole30      bool          `json:"whole30"`
+	Servings     int           `json:"servings"`
+}
+
+// Instruction defines all steps of a recipe
+type Instruction struct {
+	Steps []Step `json:"steps"`
+}
+
+// Step defines each step of a recipe
+type Step struct {
+	Number int    `json:"number"`
+	Step   string `json:"step"`
 }
 
 // Ingredient defines the fields for an ingredient of a recipe

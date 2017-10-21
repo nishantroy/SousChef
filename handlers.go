@@ -2,15 +2,13 @@ package mas
 
 import (
 	"fmt"
-	"gopkg.in/zabawaba99/firego.v1"
 	"net/http"
-
+	"os"
+	"strings"
 	"encoding/json"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
-	"os"
-	"strings"
 
 	"github.com/karlseguin/ccache"
 )
@@ -136,8 +134,8 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
-	//url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/informationBulk?ids=" + recipeID + "&includeNutrition=true"
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
+	//url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/informationBulk?ids=" + recipeID + "&includeNutrition=true"
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
@@ -156,12 +154,12 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 		fmt.Print("ERROR: ", err)
 	}
 
-	var recipes []Recipe
+	var recipe Recipe
 
 	defer res.Body.Close()
-	json.NewDecoder(res.Body).Decode(&recipes)
+	json.NewDecoder(res.Body).Decode(&recipe)
 
-	json.NewEncoder(w).Encode(recipes)
+	json.NewEncoder(w).Encode(recipe)
 
 }
 
@@ -190,25 +188,5 @@ func handleStaticRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(recipe)
-
-}
-
-// HELPER FUNCTIONS
-
-// Takes in a request containing a user ID, fetches the user from Firebase and returns
-func getUser(req *http.Request) (User, error) {
-	userID := req.URL.Query().Get("user_id")
-
-	// Make call to API or to Database here, and then write out results
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-	f := firego.New(fireURL, client)
-
-	var user User
-
-	f.Auth(fireToken)
-
-	err := f.Child("users/" + userID).Value(&user)
-	return user, err
 
 }

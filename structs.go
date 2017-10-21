@@ -63,3 +63,14 @@ type Ingredient struct {
 	Unit           string  `json:"unitShort"`
 	FullDescriptor string  `json:"originalString"`
 }
+
+type Day struct {
+	Breakfast meal
+	Lunch meal
+	Dinner meal
+}
+
+type meal struct {
+	ID   int
+	Name string
+}

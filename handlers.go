@@ -11,12 +11,15 @@ import (
 	"google.golang.org/appengine/urlfetch"
 	"os"
 	"strings"
+
+	"github.com/karlseguin/ccache"
 )
 
 var (
 	fireURL    = os.Getenv("FIREBASE_URL")
 	fireToken  = os.Getenv("FIREBASE_AUTH_TOKEN")
 	spoonToken = os.Getenv("SPOONACULAR_AUTH_TOKEN")
+	cache      = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
 )
 
 func handler(w http.ResponseWriter, req *http.Request) {
@@ -102,7 +105,31 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 
 	// Make call to API or to Database here, and then write out results
 
-	fmt.Fprintf(w, "Hello! The steps for recipe %s are: _____", recipeID)
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/"+ recipeID + "/analyzedInstructions"
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+
+	request, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		fmt.Fprint(w, "ERROR: ", err)
+	}
+
+	request.Header.Set("X-Mashape-Key", spoonToken)
+
+	res, err := client.Do(request)
+
+	if err != nil {
+		fmt.Print("ERROR: ", err)
+	}
+
+	var steps []Instruction
+
+	defer res.Body.Close()
+	json.NewDecoder(res.Body).Decode(&steps)
+
+	json.NewEncoder(w).Encode(steps)
 }
 
 // Gets ingredients, dietary restrictions, servings, name, instructions, etc.
@@ -133,8 +160,6 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 
 	defer res.Body.Close()
 	json.NewDecoder(res.Body).Decode(&recipes)
-
-	// Make call to API or to Database here, and then write out results
 
 	json.NewEncoder(w).Encode(recipes)
 

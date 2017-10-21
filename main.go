@@ -14,8 +14,8 @@ func init() {
 
 	// Recipe Handlers
 	http.HandleFunc("/api/v1/recipes/recipe_steps", handleGetRecipeSteps)
-	//http.HandleFunc("/api/v1/recipes/recipe_details", handleGetRecipeDetails)
-	http.HandleFunc("/api/v1/recipes/recipe_details", handleStaticRecipeDetails)
+	http.HandleFunc("/api/v1/recipes/recipe_details", handleGetRecipeDetails)
+	//http.HandleFunc("/api/v1/recipes/recipe_details", handleStaticRecipeDetails)
 
 	// Default
 	http.HandleFunc("/", handler)

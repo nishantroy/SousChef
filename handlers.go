@@ -10,6 +10,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
 	"os"
+	"strings"
 )
 
 var (
@@ -23,44 +24,79 @@ func handler(w http.ResponseWriter, req *http.Request) {
 
 }
 
+// HANDLERS FOR USER ENDPOINTS
+
+// Will take in a user ID, fetch his/her meal plan for the week from Firebase and return
 func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
-	userID := req.URL.Query().Get("user_id")
+	user, err := getUser(req)
 
-	// Make call to API or to Database here, and then write out results
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-	f := firego.New(fireURL, client)
-
-	var user User
-
-	f.Auth(fireToken)
-
-	if err := f.Child("users/" + userID).Value(&user); err != nil {
+	if err != nil {
 		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
 	}
 
 	json.NewEncoder(w).Encode(user)
 }
 
+// Will take in a user ID, fetch his/her shopping list from Firebase and return
 func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
-	userID := req.URL.Query().Get("user_id")
+	user, err := getUser(req)
 
-	// Make call to API or to Database here, and then write out results
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-	f := firego.New(fireURL, client)
-
-	var user User
-
-	f.Auth(fireToken)
-
-	if err := f.Child("users/" + userID).Value(&user); err != nil {
+	if err != nil {
 		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
 	}
 
 	json.NewEncoder(w).Encode(user)
 }
 
+// Will take in a user ID, fetch his/her profile, get a weekly plan from the API, and save to Firebase
+func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
+	user, err := getUser(req)
+
+	if err != nil {
+		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
+	}
+
+	diet := strings.Join(user.Diet, ",")
+	exclusions := strings.Join(user.Exclusions, ",")
+
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate"
+
+	// https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate?diet=vegetarian&exclude=shellfish%2C+olives&targetCalories=2000&timeFrame=week
+
+	url += "diet=" + diet + "&exclusions=" + exclusions + "&timeFrame=week"
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+
+	request, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		fmt.Fprint(w, "ERROR: ", err)
+	}
+
+	request.Header.Set("X-Mashape-Key", spoonToken)
+
+	res, err := client.Do(request)
+
+	if err != nil {
+		fmt.Print("ERROR: ", err)
+	}
+
+	fmt.Fprint(w, res)
+
+}
+
+// Will take in comma separated list of recipe IDs chosen by user, fetch the ingredients,
+// do unit conversions, create shopping list, and save to Firebase
+func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
+	recipeIDs := strings.Split(req.URL.Query().Get("recipe_ids"), ",")
+
+	fmt.Fprint(w, "Generating shopping list for recipes ", recipeIDs)
+}
+
+// HANDLERS FOR RECIPE ENDPOINTS
+
+// Will take in a recipeID, get the instructions for it from the API, and return
 func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
@@ -69,13 +105,12 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "Hello! The steps for recipe %s are: _____", recipeID)
 }
 
-// Gets ingredients, dietary restrictions, servings, name, etc. No steps
+// Gets ingredients, dietary restrictions, servings, name, instructions, etc.
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
 	//url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/informationBulk?ids=" + recipeID+"&includeNutrition=true"
-
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/informationBulk?ids=" + recipeID + "&includeNutrition=true"
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
@@ -105,6 +140,7 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 
 }
 
+// Returns recipe for Leek & Cheese Pie. Static placeholder recipe for testing
 func handleStaticRecipeDetails(w http.ResponseWriter, req *http.Request) {
 
 	var recipe Recipe
@@ -129,5 +165,25 @@ func handleStaticRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(recipe)
+
+}
+
+// HELPER FUNCTIONS
+
+// Takes in a request containing a user ID, fetches the user from Firebase and returns
+func getUser(req *http.Request) (User, error) {
+	userID := req.URL.Query().Get("user_id")
+
+	// Make call to API or to Database here, and then write out results
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	var user User
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID).Value(&user)
+	return user, err
 
 }

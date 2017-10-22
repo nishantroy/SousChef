@@ -13,6 +13,7 @@ import (
 	"google.golang.org/appengine/urlfetch"
 
 	"gopkg.in/zabawaba99/firego.v1"
+	"strconv"
 )
 
 var (
@@ -92,6 +93,75 @@ func getWeeklyPlanForUser(req *http.Request) (WeekPlan, error) {
 
 	err := f.Child("users/" + userID + "/weekly_plan").Value(&wp.Days)
 	return wp, err
+}
+
+func updateMeal(req *http.Request) error {
+	userID := req.URL.Query().Get("user_id")
+	day := req.URL.Query().Get("day")
+	meal := req.URL.Query().Get("meal")
+
+	recipeID, err := strconv.Atoi(req.URL.Query().Get("recipe_id"))
+
+	if err != nil {
+		return err
+	}
+
+	recipeName := req.URL.Query().Get("recipe_name")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err = f.Child("users/" + userID + "/weekly_plan/" + day + "/" + meal).Set(MealTemp{ID: recipeID, Name: recipeName})
+	return err
+
+}
+
+func getRecipeChanges(req *http.Request) (RecipeChanges, error) {
+	var r RecipeChanges
+	user, err := getUser(req)
+
+	if err != nil {
+		return r, err
+	}
+
+	offset := req.URL.Query().Get("offset")
+	meal_type := req.URL.Query().Get("meal_type")
+
+	diet := strings.Join(user.Diet, ",")
+	exclusions := strings.Join(user.Exclusions, ",")
+
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/search?"
+	url += "diet=" + diet + "&excludeIngredients=" + exclusions + "&number=10" + "&offset=" + offset +
+		"&type=" + meal_type
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+
+	request, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		return r, err
+	}
+
+	request.Header.Set("X-Mashape-Key", spoonToken)
+
+	res, err := client.Do(request)
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(res.Body)
+
+	if err != nil {
+		fmt.Print("ERROR: ", err)
+	}
+
+	defer res.Body.Close()
+
+	json.Unmarshal(buf.Bytes(), &r)
+
+	return r, err
 }
 
 func createWeeklyPlanForUser(req *http.Request) error {

@@ -88,6 +88,28 @@ func handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 }
 
 // HANDLERS FOR RECIPE ENDPOINTS
+func handleGetRecipeChanges(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	recipes, err := getRecipeChanges(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "ERROR IN HELPER METHOD :", err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(recipes)
+
+}
+
+func handleUpdateMeal(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := updateMeal(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "ERROR IN HELPER METHOD :", err)
+		return
+	}
+}
 
 // Takes in a recipeID, gets the instructions for it from the API/cache, and returns
 func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {

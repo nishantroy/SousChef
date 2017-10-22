@@ -28,6 +28,20 @@ type Recipe struct {
 	Servings     int           `json:"servings"`
 }
 
+// RecipeChanges gives the user options to change a recipe
+type RecipeChanges struct {
+	Recipes []struct {
+		ID       int    `json:"id"`
+		Title    string `json:"title"`
+		CookTime int    `json:"readyInMinutes"`
+		Image    string `json:"image"`
+	} `json:"results"`
+	BaseURL      string `json:"baseUri"`
+	Offset       int    `json:"offset"`
+	Number       int    `json:"number"`
+	TotalResults int    `json:"totalResults"`
+}
+
 // Instruction defines all steps of a recipe
 type Instruction struct {
 	Steps []step `json:"steps"`

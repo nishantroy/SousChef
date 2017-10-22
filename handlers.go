@@ -15,8 +15,6 @@ import (
 )
 
 var (
-	fireURL    = os.Getenv("FIREBASE_URL")
-	fireToken  = os.Getenv("FIREBASE_AUTH_TOKEN")
 	spoonToken = os.Getenv("SPOONACULAR_AUTH_TOKEN")
 	cache      = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
 )
@@ -64,8 +62,6 @@ func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate?"
 	url += "diet=" + diet + "&exclusions=" + exclusions + "&timeFrame=week"
 
-	//fmt.Fprintln(w, "URL: ", url)
-
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
 
@@ -82,8 +78,6 @@ func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(res.Body)
 
-	//fmt.Fprintln(w, s, "\n")
-
 	if err != nil {
 		fmt.Print("ERROR: ", err)
 	}
@@ -93,10 +87,11 @@ func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 	defer res.Body.Close()
 
 	json.Unmarshal(buf.Bytes(), &wp)
-
-	//fmt.Fprintln(w, wp)
-
 	json.NewEncoder(w).Encode(wp)
+
+	if err = writeWeeklyPlanToUser(req, wp); err != nil {
+		fmt.Fprintln(w, err)
+	}
 
 }
 

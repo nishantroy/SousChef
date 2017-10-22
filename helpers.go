@@ -3,6 +3,7 @@ package mas
 import (
 	"net/http"
 	"encoding/json"
+	"os"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
@@ -10,10 +11,14 @@ import (
 	"gopkg.in/zabawaba99/firego.v1"
 )
 
+var (
+	fireURL   = os.Getenv("FIREBASE_URL")
+	fireToken = os.Getenv("FIREBASE_AUTH_TOKEN")
+)
+
 func getUser(req *http.Request) (User, error) {
 	userID := req.URL.Query().Get("user_id")
 
-	// Make call to API or to Database here, and then write out results
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
 	f := firego.New(fireURL, client)
@@ -64,4 +69,17 @@ func (wp *WeekPlan) UnmarshalJSON(b []byte) error {
 	}
 
 	return nil
+}
+
+func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
+	userID := req.URL.Query().Get("user_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID + "/weeklyPlan").Set(wp.Days)
+	return err
 }

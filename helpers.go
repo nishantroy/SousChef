@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
 
 	"gopkg.in/zabawaba99/firego.v1"
-	"time"
 )
 
 var (
@@ -35,6 +35,50 @@ func getUser(req *http.Request) (User, error) {
 	err := f.Child("users/" + userID).Value(&user)
 	return user, err
 
+}
+
+func createUserProfile(req *http.Request) error {
+	userID := req.URL.Query().Get("user_id")
+	userName := req.URL.Query().Get("name")
+	diet := strings.Split(req.URL.Query().Get("diet"), ",")
+	exclusions := strings.Split(req.URL.Query().Get("exclusions"), ",")
+
+	user := User{Name: userName, Diet: diet, Exclusions: exclusions}
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+	if err := f.Child("users/" + userID).Set(user); err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateUserProfile(req *http.Request) error {
+	user, err := getUser(req)
+
+	if err != nil {
+		return err
+	}
+
+	userID := req.URL.Query().Get("user_id")
+	diet := strings.Split(req.URL.Query().Get("diet"), ",")
+	exclusions := strings.Split(req.URL.Query().Get("exclusions"), ",")
+
+	user.Diet = diet
+	user.Exclusions = exclusions
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+	if err := f.Child("users/" + userID).Set(user); err != nil {
+		return err
+	}
+	return nil
 }
 
 func getWeeklyPlanForUser(req *http.Request) (WeekPlan, error) {
@@ -100,45 +144,6 @@ func createWeeklyPlanForUser(req *http.Request) error {
 	return nil
 }
 
-func (wp *WeekPlan) UnmarshalJSON(b []byte) error {
-	wp.Days = make([]Day, 7)
-	var f map[string]*json.RawMessage
-	json.Unmarshal(b, &f)
-
-	var v []map[string]interface{}
-	json.Unmarshal(*f["items"], &v)
-
-	for _, item := range v {
-
-		day := int(item["day"].(float64)) - 1
-		mealnumber := int(item["slot"].(float64))
-
-		var value map[string]interface{}
-		json.Unmarshal([]byte(item["value"].(string)), &value)
-
-		id := int(value["id"].(float64))
-		name := value["title"].(string)
-		this_meal := MealTemp{ID: id, Name: name}
-
-		var day_update Day
-
-		day_update = wp.Days[day]
-
-		switch mealnumber {
-		case 1:
-			day_update.Breakfast = this_meal
-		case 2:
-			day_update.Lunch = this_meal
-		default:
-			day_update.Dinner = this_meal
-		}
-
-		wp.Days[day] = day_update
-	}
-
-	return nil
-}
-
 func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
 	userID := req.URL.Query().Get("user_id")
 
@@ -185,4 +190,43 @@ func getRecipeDetails(req *http.Request) (Recipe, error) {
 	json.NewDecoder(res.Body).Decode(&recipe)
 
 	return recipe, nil
+}
+
+func (wp *WeekPlan) UnmarshalJSON(b []byte) error {
+	wp.Days = make([]Day, 7)
+	var f map[string]*json.RawMessage
+	json.Unmarshal(b, &f)
+
+	var v []map[string]interface{}
+	json.Unmarshal(*f["items"], &v)
+
+	for _, item := range v {
+
+		day := int(item["day"].(float64)) - 1
+		mealnumber := int(item["slot"].(float64))
+
+		var value map[string]interface{}
+		json.Unmarshal([]byte(item["value"].(string)), &value)
+
+		id := int(value["id"].(float64))
+		name := value["title"].(string)
+		this_meal := MealTemp{ID: id, Name: name}
+
+		var day_update Day
+
+		day_update = wp.Days[day]
+
+		switch mealnumber {
+		case 1:
+			day_update.Breakfast = this_meal
+		case 2:
+			day_update.Lunch = this_meal
+		default:
+			day_update.Dinner = this_meal
+		}
+
+		wp.Days[day] = day_update
+	}
+
+	return nil
 }

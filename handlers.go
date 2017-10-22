@@ -21,35 +21,43 @@ func handler(w http.ResponseWriter, req *http.Request) {
 
 // HANDLERS FOR USER ENDPOINTS
 
-// Will take in a user ID, fetch his/her meal plan for the week from Firebase and return
+// Takes in a user ID, fetches meal plan for the week from Firebase and returns
 func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	wp, err := getWeeklyPlanForUser(req)
 
 	if err != nil {
 		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	json.NewEncoder(w).Encode(wp)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(wp.Days)
 }
 
-// Will take in a user ID, fetch his/her shopping list from Firebase and return
-func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
-	user, err := getUser(req)
-
-	if err != nil {
-		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
-	}
-
-	json.NewEncoder(w).Encode(user)
-}
-
-// Will take in a user ID, fetch his/her profile, get a weekly plan from the API, and save to Firebase
+// Takes in a user ID, fetches profile, gets a weekly plan from the API, and saves to Firebase
 func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 
 	if err := createWeeklyPlanForUser(req); err != nil {
 		fmt.Fprintln(w, err)
 	}
 
+}
+
+// Will take in a user ID, fetch his/her shopping list from Firebase and return
+func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	user, err := getUser(req)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
 }
 
 // Will take in comma separated list of recipe IDs chosen by user, fetch the ingredients,
@@ -60,10 +68,30 @@ func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(w, "Generating shopping list for recipes ", recipeIDs)
 }
 
+func handleCreateProfile(w http.ResponseWriter, req *http.Request) {
+	err := createUserProfile(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+}
+
+func handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := updateUserProfile(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+}
+
 // HANDLERS FOR RECIPE ENDPOINTS
 
-// Will take in a recipeID, get the instructions for it from the API, and return
+// Takes in a recipeID, gets the instructions for it from the API/cache, and returns
 func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	recipeID := req.URL.Query().Get("recipe_id")
 
 	var steps []Instruction
@@ -74,6 +102,7 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 		recipe, err := getRecipeDetails(req)
 
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err)
 			return
 		}
@@ -84,11 +113,13 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 		steps = recipe_cached.Value().(Recipe).Instructions
 	}
 
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(steps)
 }
 
-// Gets ingredients, dietary restrictions, servings, name, instructions, etc.
+// Takes in a recipeID, gets the details for it from the API/cache, and returns
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	recipeID := req.URL.Query().Get("recipe_id")
 
 	var recipe Recipe
@@ -98,6 +129,7 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 		recipe_to_cache, err := getRecipeDetails(req)
 
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err)
 			return
 		}
@@ -108,6 +140,7 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 		recipe = recipe_cached.Value().(Recipe)
 	}
 
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(recipe)
 
 }

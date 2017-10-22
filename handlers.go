@@ -1,22 +1,17 @@
 package mas
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
-	"encoding/json"
-
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/urlfetch"
+	"time"
 
 	"github.com/karlseguin/ccache"
-	"bytes"
 )
 
 var (
-	spoonToken = os.Getenv("SPOONACULAR_AUTH_TOKEN")
-	cache      = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
+	cache = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
 )
 
 func handler(w http.ResponseWriter, req *http.Request) {
@@ -28,13 +23,13 @@ func handler(w http.ResponseWriter, req *http.Request) {
 
 // Will take in a user ID, fetch his/her meal plan for the week from Firebase and return
 func handleGetWeeklyPlan(w http.ResponseWriter, req *http.Request) {
-	user, err := getUser(req)
+	wp, err := getWeeklyPlanForUser(req)
 
 	if err != nil {
 		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
 	}
 
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(wp)
 }
 
 // Will take in a user ID, fetch his/her shopping list from Firebase and return
@@ -50,46 +45,8 @@ func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
 
 // Will take in a user ID, fetch his/her profile, get a weekly plan from the API, and save to Firebase
 func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
-	user, err := getUser(req)
 
-	if err != nil {
-		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
-	}
-
-	diet := strings.Join(user.Diet, ",")
-	exclusions := strings.Join(user.Exclusions, ",")
-
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate?"
-	url += "diet=" + diet + "&exclusions=" + exclusions + "&timeFrame=week"
-
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-
-	request, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		fmt.Fprint(w, "ERROR: ", err)
-	}
-
-	request.Header.Set("X-Mashape-Key", spoonToken)
-
-	res, err := client.Do(request)
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(res.Body)
-
-	if err != nil {
-		fmt.Print("ERROR: ", err)
-	}
-
-	var wp WeekPlan
-
-	defer res.Body.Close()
-
-	json.Unmarshal(buf.Bytes(), &wp)
-	json.NewEncoder(w).Encode(wp)
-
-	if err = writeWeeklyPlanToUser(req, wp); err != nil {
+	if err := createWeeklyPlanForUser(req); err != nil {
 		fmt.Fprintln(w, err)
 	}
 
@@ -109,31 +66,23 @@ func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
-	// Make call to API or to Database here, and then write out results
-
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/"+ recipeID + "/analyzedInstructions"
-
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-
-	request, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		fmt.Fprint(w, "ERROR: ", err)
-	}
-
-	request.Header.Set("X-Mashape-Key", spoonToken)
-
-	res, err := client.Do(request)
-
-	if err != nil {
-		fmt.Print("ERROR: ", err)
-	}
-
 	var steps []Instruction
 
-	defer res.Body.Close()
-	json.NewDecoder(res.Body).Decode(&steps)
+	recipe_cached := cache.Get("recipe_id:" + recipeID)
+
+	if recipe_cached == nil {
+		recipe, err := getRecipeDetails(req)
+
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		cache.Set("recipe_id:"+recipeID, recipe, time.Hour*1000)
+		steps = recipe.Instructions
+	} else {
+		steps = recipe_cached.Value().(Recipe).Instructions
+	}
 
 	json.NewEncoder(w).Encode(steps)
 }
@@ -142,30 +91,22 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
-	//url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/informationBulk?ids=" + recipeID + "&includeNutrition=true"
-
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-
-	request, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		fmt.Fprint(w, "ERROR: ", err)
-	}
-
-	request.Header.Set("X-Mashape-Key", spoonToken)
-
-	res, err := client.Do(request)
-
-	if err != nil {
-		fmt.Print("ERROR: ", err)
-	}
-
 	var recipe Recipe
+	recipe_cached := cache.Get("recipe_id:" + recipeID)
 
-	defer res.Body.Close()
-	json.NewDecoder(res.Body).Decode(&recipe)
+	if recipe_cached == nil {
+		recipe_to_cache, err := getRecipeDetails(req)
+
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		cache.Set("recipe_id:"+recipeID, recipe_to_cache, time.Hour*1000)
+		recipe = recipe_to_cache
+	} else {
+		recipe = recipe_cached.Value().(Recipe)
+	}
 
 	json.NewEncoder(w).Encode(recipe)
 

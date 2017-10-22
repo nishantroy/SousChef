@@ -2,10 +2,10 @@ package mas
 
 // User defines the user profile and their weekly plan
 type User struct {
-	Name       string               `json:"name"`
-	WeeklyPlan map[string]DailyPlan `json:"weekly_plan"`
-	Diet       []string             `json:"diet"`
-	Exclusions []string             `json:"exclusions"`
+	Name       string   `json:"name"`
+	Days       []Day    `json:"weekly_plan"`
+	Diet       []string `json:"diet"`
+	Exclusions []string `json:"exclusions"`
 }
 
 // DailyPlan defines the meal plan for one day for a user

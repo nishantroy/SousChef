@@ -1,9 +1,12 @@
 package mas
 
 import (
-	"net/http"
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"os"
+	"strings"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
@@ -12,8 +15,9 @@ import (
 )
 
 var (
-	fireURL   = os.Getenv("FIREBASE_URL")
-	fireToken = os.Getenv("FIREBASE_AUTH_TOKEN")
+	fireURL    = os.Getenv("FIREBASE_URL")
+	fireToken  = os.Getenv("FIREBASE_AUTH_TOKEN")
+	spoonToken = os.Getenv("SPOONACULAR_AUTH_TOKEN")
 )
 
 func getUser(req *http.Request) (User, error) {
@@ -30,6 +34,69 @@ func getUser(req *http.Request) (User, error) {
 	err := f.Child("users/" + userID).Value(&user)
 	return user, err
 
+}
+
+func getWeeklyPlanForUser(req *http.Request) (WeekPlan, error) {
+	userID := req.URL.Query().Get("user_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	wp := WeekPlan{}
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID + "/weekly_plan").Value(&wp.Days)
+	return wp, err
+}
+
+func createWeeklyPlanForUser(req *http.Request) error {
+	user, err := getUser(req)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(user)
+
+	diet := strings.Join(user.Diet, ",")
+	exclusions := strings.Join(user.Exclusions, ",")
+
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate?"
+	url += "diet=" + diet + "&exclusions=" + exclusions + "&timeFrame=week"
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+
+	request, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set("X-Mashape-Key", spoonToken)
+
+	res, err := client.Do(request)
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(res.Body)
+
+	if err != nil {
+		fmt.Print("ERROR: ", err)
+	}
+
+	var wp WeekPlan
+
+	defer res.Body.Close()
+
+	json.Unmarshal(buf.Bytes(), &wp)
+
+	if err = writeWeeklyPlanToUser(req, wp); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (wp *WeekPlan) UnmarshalJSON(b []byte) error {
@@ -80,6 +147,36 @@ func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
 
 	f.Auth(fireToken)
 
-	err := f.Child("users/" + userID + "/weeklyPlan").Set(wp.Days)
+	err := f.Child("users/" + userID + "/weekly_plan").Set(wp.Days)
 	return err
+}
+
+func getRecipeDetails(req *http.Request) (Recipe, error) {
+	recipeID := req.URL.Query().Get("recipe_id")
+
+	var recipe Recipe
+
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+
+	request, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		return recipe, err
+	}
+
+	request.Header.Set("X-Mashape-Key", spoonToken)
+
+	res, err := client.Do(request)
+
+	if err != nil {
+		return recipe, err
+	}
+
+	defer res.Body.Close()
+	json.NewDecoder(res.Body).Decode(&recipe)
+
+	return recipe, nil
 }

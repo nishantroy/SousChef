@@ -70,13 +70,15 @@ type WeekPlan struct {
 
 // Day holds 3 meals for a day
 type Day struct {
-	Breakfast MealTemp
-	Lunch     MealTemp
-	Dinner    MealTemp
+	Breakfast Meal
+	Lunch     Meal
+	Dinner    Meal
 }
 
 // MealTemp defines the fields for a meal in a meal plan: the recipe ID and name
-type MealTemp struct {
-	ID   int
-	Name string
+type Meal struct {
+	ID       int
+	Name     string
+	CookTime int
+	Image    string
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/karlseguin/ccache"
 )
@@ -114,56 +113,79 @@ func handleUpdateMeal(w http.ResponseWriter, req *http.Request) {
 // Takes in a recipeID, gets the instructions for it from the API/cache, and returns
 func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	recipeID := req.URL.Query().Get("recipe_id")
+	//recipeID := req.URL.Query().Get("recipe_id")
 
-	var steps []Instruction
+	recipe, err := getRecipeDetails(req)
 
-	recipeCached := cache.Get("recipe_id:" + recipeID)
-
-	if recipeCached == nil {
-		recipe, err := getRecipeDetails(req)
-
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		cache.Set("recipe_id:"+recipeID, recipe, time.Hour*1000)
-		steps = recipe.Instructions
-	} else {
-		steps = recipeCached.Value().(Recipe).Instructions
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(steps)
+	json.NewEncoder(w).Encode(recipe.Instructions)
+
+	//var steps []Instruction
+	//
+	//recipeCached := cache.Get("recipe_id:" + recipeID)
+	//
+	//if recipeCached == nil {
+	//	recipe, err := getRecipeDetails(req)
+	//
+	//	if err != nil {
+	//		w.WriteHeader(http.StatusInternalServerError)
+	//		fmt.Fprintln(w, err)
+	//		return
+	//	}
+	//
+	//	cache.Set("recipe_id:"+recipeID, recipe, time.Hour*1000)
+	//	steps = recipe.Instructions
+	//} else {
+	//	steps = recipeCached.Value().(Recipe).Instructions
+	//}
+	//
+	//w.WriteHeader(http.StatusOK)
+	//json.NewEncoder(w).Encode(steps)
 }
 
 // Takes in a recipeID, gets the details for it from the API/cache, and returns
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	recipeID := req.URL.Query().Get("recipe_id")
 
-	var recipe Recipe
-	recipeCached := cache.Get("recipe_id:" + recipeID)
+	recipe, err := getRecipeDetails(req)
 
-	if recipeCached == nil {
-		recipeCached, err := getRecipeDetails(req)
-
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		cache.Set("recipe_id:"+recipeID, recipeCached, time.Hour*1000)
-		recipe = recipeCached
-	} else {
-		recipe = recipeCached.Value().(Recipe)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(recipe)
+
+	//recipeID := req.URL.Query().Get("recipe_id")
+	//
+	//var recipe Recipe
+	//recipeCached := cache.Get("recipe_id:" + recipeID)
+	//
+	//if recipeCached == nil {
+	//	recipeCached, err := getRecipeDetails(req)
+	//
+	//	if err != nil {
+	//		w.WriteHeader(http.StatusInternalServerError)
+	//		fmt.Fprintln(w, err)
+	//		return
+	//	}
+	//
+	//	cache.Set("recipe_id:"+recipeID, recipeCached, time.Hour*1000)
+	//	recipe = recipeCached
+	//} else {
+	//	recipe = recipeCached.Value().(Recipe)
+	//}
+	//
+	//w.WriteHeader(http.StatusOK)
+	//json.NewEncoder(w).Encode(recipe)
 
 }
 

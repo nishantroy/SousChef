@@ -107,6 +107,13 @@ func updateMeal(req *http.Request) error {
 	}
 
 	recipeName := req.URL.Query().Get("recipe_name")
+	cookTime, err := strconv.Atoi(req.URL.Query().Get("cook_time"))
+	if err != nil {
+		return err
+	}
+	image := req.URL.Query().Get("image")
+
+	new_meal := Meal{ID: recipeID, Name: recipeName, CookTime: cookTime, Image: image}
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
@@ -114,7 +121,7 @@ func updateMeal(req *http.Request) error {
 
 	f.Auth(fireToken)
 
-	err = f.Child("users/" + userID + "/weekly_plan/" + day + "/" + meal).Set(MealTemp{ID: recipeID, Name: recipeName})
+	err = f.Child("users/" + userID + "/weekly_plan/" + day + "/" + meal).Set(new_meal)
 	return err
 
 }
@@ -205,6 +212,45 @@ func createWeeklyPlanForUser(req *http.Request) error {
 
 	json.Unmarshal(buf.Bytes(), &wp)
 
+	// Get cook time and images for all meals
+	for index, day := range wp.Days {
+		var (
+			breakfast Recipe
+			lunch     Recipe
+			dinner    Recipe
+		)
+
+		// Get cook time and image for breakfast
+		breakfast_id := strconv.Itoa(day.Breakfast.ID)
+		q := req.URL.Query()
+		q.Set("recipe_id", breakfast_id)
+		req.URL.RawQuery = q.Encode()
+		breakfast, err = getRecipeDetails(req)
+		day.Breakfast.CookTime = breakfast.CookTime
+		day.Breakfast.Image = breakfast.Image
+
+		// Get cook time and image for lunch
+		lunch_id := strconv.Itoa(day.Lunch.ID)
+		q = req.URL.Query()
+		q.Set("recipe_id", lunch_id)
+		req.URL.RawQuery = q.Encode()
+		lunch, err = getRecipeDetails(req)
+		day.Lunch.CookTime = lunch.CookTime
+		day.Lunch.Image = lunch.Image
+
+		// Get cook time and image for dinner
+		dinner_id := strconv.Itoa(day.Dinner.ID)
+		q = req.URL.Query()
+		q.Set("recipe_id", dinner_id)
+		req.URL.RawQuery = q.Encode()
+		dinner, err = getRecipeDetails(req)
+		day.Dinner.CookTime = dinner.CookTime
+		day.Dinner.Image = dinner.Image
+
+		wp.Days[index] = day
+
+	}
+
 	err = writeWeeklyPlanToUser(req, wp)
 	return err
 }
@@ -230,31 +276,38 @@ func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
 func getRecipeDetails(req *http.Request) (Recipe, error) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
-	var recipe Recipe
+	recipeCached := cache.Get("recipe_id:" + recipeID)
 
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
+	if recipeCached == nil {
+		var recipe Recipe
 
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
+		url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
 
-	request, err := http.NewRequest("GET", url, nil)
+		ctx := appengine.NewContext(req)
+		client := urlfetch.Client(ctx)
 
-	if err != nil {
-		return recipe, err
+		request, err := http.NewRequest("GET", url, nil)
+
+		if err != nil {
+			return recipe, err
+		}
+
+		request.Header.Set("X-Mashape-Key", spoonToken)
+
+		res, err := client.Do(request)
+
+		if err != nil {
+			return recipe, err
+		}
+
+		defer res.Body.Close()
+		json.NewDecoder(res.Body).Decode(&recipe)
+
+		cache.Set("recipe_id:"+recipeID, recipe, time.Hour*1000)
+		return recipe, nil
+	} else {
+		return recipeCached.Value().(Recipe), nil
 	}
-
-	request.Header.Set("X-Mashape-Key", spoonToken)
-
-	res, err := client.Do(request)
-
-	if err != nil {
-		return recipe, err
-	}
-
-	defer res.Body.Close()
-	json.NewDecoder(res.Body).Decode(&recipe)
-
-	return recipe, nil
 }
 
 // UnmarshalJSON is overwritten for the WeekPlan struct to handle the nested JSON returned from the API gracefully
@@ -274,9 +327,12 @@ func (wp *WeekPlan) UnmarshalJSON(b []byte) error {
 		var value map[string]interface{}
 		json.Unmarshal([]byte(item["value"].(string)), &value)
 
+		fmt.Println(value)
+
 		id := int(value["id"].(float64))
 		name := value["title"].(string)
-		thisMeal := MealTemp{ID: id, Name: name}
+
+		thisMeal := Meal{ID: id, Name: name}
 
 		var dateUpdate Day
 

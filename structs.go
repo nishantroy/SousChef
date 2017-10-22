@@ -75,7 +75,7 @@ type Day struct {
 	Dinner    Meal
 }
 
-// MealTemp defines the fields for a meal in a meal plan: the recipe ID and name
+// Meal defines the fields for a meal in a meal plan: the recipe ID, name, cook time and image URL
 type Meal struct {
 	ID       int
 	Name     string

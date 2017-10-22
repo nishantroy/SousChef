@@ -5,12 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/karlseguin/ccache"
-)
-
-var (
-	cache = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
 )
 
 func handler(w http.ResponseWriter, _ *http.Request) {

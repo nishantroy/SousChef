@@ -11,12 +11,12 @@ type User struct {
 
 // Recipe defines the fields for a recipe
 type Recipe struct {
-	Ingredients  []Ingredient  `json:"extendedIngredients"`
+	Ingredients  []ingredient  `json:"extendedIngredients"`
 	ID           int           `json:"id"`
 	Title        string        `json:"title"`
 	CookTime     int           `json:"readyInMinutes"`
 	Image        string        `json:"image"`
-	Instructions []Instruction `json:"analyzedInstructions"`
+	Instructions []instruction `json:"analyzedInstructions"`
 	Vegetarian   bool          `json:"vegetarian"`
 	Vegan        bool          `json:"vegan"`
 	GlutenFree   bool          `json:"glutenFree"`
@@ -42,8 +42,8 @@ type RecipeChanges struct {
 	TotalResults int    `json:"totalResults"`
 }
 
-// Instruction defines all steps of a recipe
-type Instruction struct {
+// instruction defines all steps of a recipe
+type instruction struct {
 	Steps []step `json:"steps"`
 }
 
@@ -53,8 +53,8 @@ type step struct {
 	Step   string `json:"step"`
 }
 
-// Ingredient defines the fields for an ingredient of a recipe
-type Ingredient struct {
+// ingredient defines the fields for an ingredient of a recipe
+type ingredient struct {
 	ID             int     `json:"id"`
 	Category       string  `json:"aisle"`
 	Name           string  `json:"name"`

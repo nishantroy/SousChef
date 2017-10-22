@@ -12,6 +12,7 @@ import (
 	"google.golang.org/appengine/urlfetch"
 
 	"gopkg.in/zabawaba99/firego.v1"
+	"time"
 )
 
 var (
@@ -148,6 +149,11 @@ func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
 	f.Auth(fireToken)
 
 	err := f.Child("users/" + userID + "/weekly_plan").Set(wp.Days)
+	if err != nil {
+		return err
+	}
+
+	err = f.Child("users/" + userID + "/weekly_plan_date").Set(time.Now().Format("02-01-2006"))
 	return err
 }
 

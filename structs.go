@@ -64,13 +64,17 @@ type Ingredient struct {
 	FullDescriptor string  `json:"originalString"`
 }
 
-type Day struct {
-	Breakfast meal
-	Lunch meal
-	Dinner meal
+type WeekPlan struct {
+	Days []Day
 }
 
-type meal struct {
+type Day struct {
+	Breakfast MealTemp
+	Lunch     MealTemp
+	Dinner    MealTemp
+}
+
+type MealTemp struct {
 	ID   int
 	Name string
 }

@@ -11,6 +11,7 @@ import (
 	"google.golang.org/appengine/urlfetch"
 
 	"github.com/karlseguin/ccache"
+	"bytes"
 )
 
 var (
@@ -60,11 +61,10 @@ func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 	diet := strings.Join(user.Diet, ",")
 	exclusions := strings.Join(user.Exclusions, ",")
 
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate"
-
-	// https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate?diet=vegetarian&exclude=shellfish%2C+olives&targetCalories=2000&timeFrame=week
-
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate?"
 	url += "diet=" + diet + "&exclusions=" + exclusions + "&timeFrame=week"
+
+	//fmt.Fprintln(w, "URL: ", url)
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
@@ -79,11 +79,24 @@ func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 
 	res, err := client.Do(request)
 
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(res.Body)
+
+	//fmt.Fprintln(w, s, "\n")
+
 	if err != nil {
 		fmt.Print("ERROR: ", err)
 	}
 
-	fmt.Fprint(w, res)
+	var wp WeekPlan
+
+	defer res.Body.Close()
+
+	json.Unmarshal(buf.Bytes(), &wp)
+
+	//fmt.Fprintln(w, wp)
+
+	json.NewEncoder(w).Encode(wp)
 
 }
 

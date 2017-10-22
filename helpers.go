@@ -50,10 +50,10 @@ func createUserProfile(req *http.Request) error {
 	f := firego.New(fireURL, client)
 
 	f.Auth(fireToken)
-	if err := f.Child("users/" + userID).Set(user); err != nil {
-		return err
-	}
-	return nil
+
+	err := f.Child("users/" + userID).Set(user)
+	return err
+
 }
 
 func updateUserProfile(req *http.Request) error {
@@ -75,10 +75,8 @@ func updateUserProfile(req *http.Request) error {
 	f := firego.New(fireURL, client)
 
 	f.Auth(fireToken)
-	if err := f.Child("users/" + userID).Set(user); err != nil {
-		return err
-	}
-	return nil
+	err = f.Child("users/" + userID).Set(user)
+	return err
 }
 
 func getWeeklyPlanForUser(req *http.Request) (WeekPlan, error) {
@@ -137,11 +135,8 @@ func createWeeklyPlanForUser(req *http.Request) error {
 
 	json.Unmarshal(buf.Bytes(), &wp)
 
-	if err = writeWeeklyPlanToUser(req, wp); err != nil {
-		return err
-	}
-
-	return nil
+	err = writeWeeklyPlanToUser(req, wp)
+	return err
 }
 
 func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
@@ -192,6 +187,7 @@ func getRecipeDetails(req *http.Request) (Recipe, error) {
 	return recipe, nil
 }
 
+// UnmarshalJSON is overwritten for the WeekPlan struct to handle the nested JSON returned from the API gracefully
 func (wp *WeekPlan) UnmarshalJSON(b []byte) error {
 	wp.Days = make([]Day, 7)
 	var f map[string]*json.RawMessage
@@ -210,22 +206,22 @@ func (wp *WeekPlan) UnmarshalJSON(b []byte) error {
 
 		id := int(value["id"].(float64))
 		name := value["title"].(string)
-		this_meal := MealTemp{ID: id, Name: name}
+		thisMeal := MealTemp{ID: id, Name: name}
 
-		var day_update Day
+		var dateUpdate Day
 
-		day_update = wp.Days[day]
+		dateUpdate = wp.Days[day]
 
 		switch mealnumber {
 		case 1:
-			day_update.Breakfast = this_meal
+			dateUpdate.Breakfast = thisMeal
 		case 2:
-			day_update.Lunch = this_meal
+			dateUpdate.Lunch = thisMeal
 		default:
-			day_update.Dinner = this_meal
+			dateUpdate.Dinner = thisMeal
 		}
 
-		wp.Days[day] = day_update
+		wp.Days[day] = dateUpdate
 	}
 
 	return nil

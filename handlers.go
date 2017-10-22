@@ -14,7 +14,7 @@ var (
 	cache = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
 )
 
-func handler(w http.ResponseWriter, req *http.Request) {
+func handler(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprint(w, "Welcome to the SousChef API!")
 
 }
@@ -96,9 +96,9 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 
 	var steps []Instruction
 
-	recipe_cached := cache.Get("recipe_id:" + recipeID)
+	recipeCached := cache.Get("recipe_id:" + recipeID)
 
-	if recipe_cached == nil {
+	if recipeCached == nil {
 		recipe, err := getRecipeDetails(req)
 
 		if err != nil {
@@ -110,7 +110,7 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 		cache.Set("recipe_id:"+recipeID, recipe, time.Hour*1000)
 		steps = recipe.Instructions
 	} else {
-		steps = recipe_cached.Value().(Recipe).Instructions
+		steps = recipeCached.Value().(Recipe).Instructions
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -123,10 +123,10 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	recipeID := req.URL.Query().Get("recipe_id")
 
 	var recipe Recipe
-	recipe_cached := cache.Get("recipe_id:" + recipeID)
+	recipeCached := cache.Get("recipe_id:" + recipeID)
 
-	if recipe_cached == nil {
-		recipe_to_cache, err := getRecipeDetails(req)
+	if recipeCached == nil {
+		recipeCached, err := getRecipeDetails(req)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -134,10 +134,10 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		cache.Set("recipe_id:"+recipeID, recipe_to_cache, time.Hour*1000)
-		recipe = recipe_to_cache
+		cache.Set("recipe_id:"+recipeID, recipeCached, time.Hour*1000)
+		recipe = recipeCached
 	} else {
-		recipe = recipe_cached.Value().(Recipe)
+		recipe = recipeCached.Value().(Recipe)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -145,8 +145,8 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 
 }
 
-// Returns recipe for Leek & Cheese Pie. Static placeholder recipe for testing
-func handleStaticRecipeDetails(w http.ResponseWriter, req *http.Request) {
+/* Returns recipe for Leek & Cheese Pie. Static placeholder recipe for testing
+func handleStaticRecipeDetails(w http.ResponseWriter, _ *http.Request) {
 
 	var recipe Recipe
 
@@ -172,3 +172,4 @@ func handleStaticRecipeDetails(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(recipe)
 
 }
+*/

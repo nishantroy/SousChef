@@ -9,22 +9,6 @@ type User struct {
 	WeeklyPlanDate string   `json:"weekly_plan_date"`
 }
 
-// DailyPlan defines the meal plan for one day for a user
-type DailyPlan struct {
-	Breakfast Meal               `json:"breakfast"`
-	Lunch     Meal               `json:"lunch"`
-	Dinner    Meal               `json:"dinner"`
-	Nutrition map[string]float32 `json:"nutrients"`
-}
-
-// Meal defines the fields of a meal for a user's meal plan
-type Meal struct {
-	RecipeID    int    `json:"recipe_id"`
-	RecipeTitle string `json:"recipe_title"`
-	RecipeImage string `json:"recipe_image"`
-	CookTime    int    `json:"ready_in_minutes"`
-}
-
 // Recipe defines the fields for a recipe
 type Recipe struct {
 	Ingredients  []Ingredient  `json:"extendedIngredients"`
@@ -46,11 +30,11 @@ type Recipe struct {
 
 // Instruction defines all steps of a recipe
 type Instruction struct {
-	Steps []Step `json:"steps"`
+	Steps []step `json:"steps"`
 }
 
-// Step defines each step of a recipe
-type Step struct {
+// step defines each step of a recipe
+type step struct {
 	Number int    `json:"number"`
 	Step   string `json:"step"`
 }
@@ -65,16 +49,19 @@ type Ingredient struct {
 	FullDescriptor string  `json:"originalString"`
 }
 
+// WeekPlan holds a week's worth of recipes
 type WeekPlan struct {
 	Days []Day
 }
 
+// Day holds 3 meals for a day
 type Day struct {
 	Breakfast MealTemp
 	Lunch     MealTemp
 	Dinner    MealTemp
 }
 
+// MealTemp defines the fields for a meal in a meal plan: the recipe ID and name
 type MealTemp struct {
 	ID   int
 	Name string

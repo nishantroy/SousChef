@@ -140,6 +140,15 @@ RESPONSE FORMAT
     }
 ```
 
+#### GET /api/v1/users/shopping_list_create
+```
+PARAMS
+    - recipe_ids(comma-separated ints)
+        * Chosen by user
+
+RESPONSE FORMAT (empty)
+```
+
 #### GET /api/v1/recipes/recipe_steps
 
 ```

@@ -57,6 +57,16 @@ func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
 // do unit conversions, create shopping list, and save to Firebase
 func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 	recipeIDs := strings.Split(req.URL.Query().Get("recipe_ids"), ",")
+	fmt.Println(len(recipeIDs))
+	for i := 0; i < len(recipeIDs); i++ {
+		id := recipeIDs[i]
+		r, err := getRecipeDetails(req, id)
+		if err != nil {
+			fmt.Fprintln(w, err)
+		} else {
+			fmt.Fprint(w, "recipe ", r)
+		}
+	}
 
 	fmt.Fprint(w, "Generating shopping list for recipes ", recipeIDs)
 }
@@ -107,9 +117,9 @@ func handleUpdateMeal(w http.ResponseWriter, req *http.Request) {
 // Takes in a recipeID, gets the instructions for it from the API/cache, and returns
 func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	//recipeID := req.URL.Query().Get("recipe_id")
+	recipeID := req.URL.Query().Get("recipe_id")
 
-	recipe, err := getRecipeDetails(req)
+	recipe, err := getRecipeDetails(req, recipeID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -145,9 +155,10 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 
 // Takes in a recipeID, gets the details for it from the API/cache, and returns
 func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
+	recipeID := req.URL.Query().Get("recipe_id")
 	w.Header().Set("Content-Type", "application/json")
 
-	recipe, err := getRecipeDetails(req)
+	recipe, err := getRecipeDetails(req, recipeID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

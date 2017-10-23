@@ -230,7 +230,7 @@ func createWeeklyPlanForUser(req *http.Request) error {
 		q := req.URL.Query()
 		q.Set("recipe_id", breakfastID)
 		req.URL.RawQuery = q.Encode()
-		breakfast, err = getRecipeDetails(req)
+		breakfast, err = getRecipeDetails(req, breakfastID)
 		day.Breakfast.CookTime = breakfast.CookTime
 		day.Breakfast.Image = breakfast.Image
 
@@ -239,7 +239,7 @@ func createWeeklyPlanForUser(req *http.Request) error {
 		q = req.URL.Query()
 		q.Set("recipe_id", lunchID)
 		req.URL.RawQuery = q.Encode()
-		lunch, err = getRecipeDetails(req)
+		lunch, err = getRecipeDetails(req, lunchID)
 		day.Lunch.CookTime = lunch.CookTime
 		day.Lunch.Image = lunch.Image
 
@@ -248,7 +248,7 @@ func createWeeklyPlanForUser(req *http.Request) error {
 		q = req.URL.Query()
 		q.Set("recipe_id", dinnerID)
 		req.URL.RawQuery = q.Encode()
-		dinner, err = getRecipeDetails(req)
+		dinner, err = getRecipeDetails(req, dinnerID)
 		day.Dinner.CookTime = dinner.CookTime
 		day.Dinner.Image = dinner.Image
 
@@ -278,9 +278,7 @@ func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
 	return err
 }
 
-func getRecipeDetails(req *http.Request) (Recipe, error) {
-	recipeID := req.URL.Query().Get("recipe_id")
-
+func getRecipeDetails(req *http.Request, recipeID string) (Recipe, error) {
 	recipeCached := cache.Get("recipe_id:" + recipeID)
 
 	if recipeCached == nil {

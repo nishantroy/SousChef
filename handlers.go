@@ -64,7 +64,7 @@ func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			fmt.Fprintln(w, err)
 		} else {
-			fmt.Fprint(w, "recipe ", r)
+			fmt.Fprintln(w, r.Ingredients)
 		}
 	}
 

@@ -108,7 +108,7 @@ func updateMeal(req *http.Request) error {
 		return err
 	}
 
-	recipe, err := getRecipeDetails(req)
+	recipe, err := getRecipeDetails(req, strconv.Itoa(recipeID))
 
 	if err != nil {
 		return err

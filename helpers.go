@@ -108,12 +108,15 @@ func updateMeal(req *http.Request) error {
 		return err
 	}
 
-	recipeName := req.URL.Query().Get("recipe_name")
-	cookTime, err := strconv.Atoi(req.URL.Query().Get("cook_time"))
+	recipe, err := getRecipeDetails(req)
+
 	if err != nil {
 		return err
 	}
-	image := req.URL.Query().Get("image")
+
+	recipeName := recipe.Title
+	cookTime := recipe.CookTime
+	image := recipe.Image
 
 	newMeal := Meal{ID: recipeID, Name: recipeName, CookTime: cookTime, Image: image}
 

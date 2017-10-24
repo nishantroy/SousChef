@@ -54,7 +54,7 @@ PARAMS
     - user_id (string)
         * UID from Firebase auth
     - day (int)
-        * 0 - 7
+        * 0 - 6
     - meal (string)
         * Breakfast, Lunch, Dinner
     - recipe_id (int)

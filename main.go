@@ -20,6 +20,7 @@ func init() {
 
 	// User profile handlers
 	http.HandleFunc("/api/v1/users/create_profile", handleCreateProfile)
+	http.HandleFunc("/api/v1/users/get_profile", handleGetProfile)
 	http.HandleFunc("/api/v1/users/update_profile", handleUpdateProfile)
 
 	// RECIPE HANDLERS

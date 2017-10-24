@@ -40,7 +40,7 @@ func handleCreateWeeklyPlan(w http.ResponseWriter, req *http.Request) {
 // Will take in a user ID, fetch his/her shopping list from Firebase and return
 func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	user, err := getUser(req)
+	shopList, err := getShoppingListForUser(req)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -49,14 +49,14 @@ func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(shopList)
 }
 
 // Will take in comma separated list of recipe IDs chosen by user, fetch the ingredients,
 // do unit conversions, create shopping list, and save to Firebase
 func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	shopList, err := createShoppingList(req)
+	err := createShoppingListForUser(req)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -64,8 +64,7 @@ func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(shopList)
-
+	//fmt.Fprintln(w, "SUCCESS!")
 }
 
 func handleCreateProfile(w http.ResponseWriter, req *http.Request) {

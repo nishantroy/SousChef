@@ -13,6 +13,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
 
+	"errors"
 	"github.com/karlseguin/ccache"
 	"gopkg.in/zabawaba99/firego.v1"
 )
@@ -22,6 +23,7 @@ var (
 	fireToken  = os.Getenv("FIREBASE_AUTH_TOKEN")
 	spoonToken = os.Getenv("SPOONACULAR_AUTH_TOKEN")
 	cache      = ccache.New(ccache.Configure().MaxSize(1000).ItemsToPrune(100))
+	replacer   = strings.NewReplacer(".", ",", "$", ",", "[", ",", "]", ",", "#", ",", "/", ",")
 )
 
 func getUser(req *http.Request) (User, error) {
@@ -95,85 +97,6 @@ func getWeeklyPlanForUser(req *http.Request) (WeekPlan, error) {
 
 	err := f.Child("users/" + userID + "/weekly_plan").Value(&wp.Days)
 	return wp, err
-}
-
-func updateMeal(req *http.Request) error {
-	userID := req.URL.Query().Get("user_id")
-	day := req.URL.Query().Get("day")
-	meal := req.URL.Query().Get("meal")
-
-	recipeID, err := strconv.Atoi(req.URL.Query().Get("recipe_id"))
-
-	if err != nil {
-		return err
-	}
-
-	recipe, err := getRecipeDetails(req, strconv.Itoa(recipeID))
-
-	if err != nil {
-		return err
-	}
-
-	recipeName := recipe.Title
-	cookTime := recipe.CookTime
-	image := recipe.Image
-
-	newMeal := Meal{ID: recipeID, Name: recipeName, CookTime: cookTime, Image: image}
-
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-	f := firego.New(fireURL, client)
-
-	f.Auth(fireToken)
-
-	err = f.Child("users/" + userID + "/weekly_plan/" + day + "/" + meal).Set(newMeal)
-	return err
-
-}
-
-func getRecipeChanges(req *http.Request) (RecipeChanges, error) {
-	var r RecipeChanges
-	user, err := getUser(req)
-
-	if err != nil {
-		return r, err
-	}
-
-	offset := req.URL.Query().Get("offset")
-	mealType := req.URL.Query().Get("meal_type")
-
-	diet := user.Diet
-	exclusions := strings.Join(user.Exclusions, ",")
-
-	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/search?"
-	url += "diet=" + diet + "&excludeIngredients=" + exclusions + "&number=10" + "&offset=" + offset +
-		"&type=" + mealType
-
-	ctx := appengine.NewContext(req)
-	client := urlfetch.Client(ctx)
-
-	request, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		return r, err
-	}
-
-	request.Header.Set("X-Mashape-Key", spoonToken)
-
-	res, err := client.Do(request)
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(res.Body)
-
-	if err != nil {
-		fmt.Print("ERROR: ", err)
-	}
-
-	defer res.Body.Close()
-
-	json.Unmarshal(buf.Bytes(), &r)
-
-	return r, err
 }
 
 func createWeeklyPlanForUser(req *http.Request) error {
@@ -278,19 +201,117 @@ func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
 	return err
 }
 
-func createShoppingList(req *http.Request) (map[string]map[string]map[string]float32, error) {
+func updateMeal(req *http.Request) error {
+	userID := req.URL.Query().Get("user_id")
+	day := req.URL.Query().Get("day")
+	meal := req.URL.Query().Get("meal")
+
+	recipeID, err := strconv.Atoi(req.URL.Query().Get("recipe_id"))
+
+	if err != nil {
+		return err
+	}
+
+	recipe, err := getRecipeDetails(req, strconv.Itoa(recipeID))
+
+	if err != nil {
+		return err
+	}
+
+	recipeName := recipe.Title
+	cookTime := recipe.CookTime
+	image := recipe.Image
+
+	newMeal := Meal{ID: recipeID, Name: recipeName, CookTime: cookTime, Image: image}
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err = f.Child("users/" + userID + "/weekly_plan/" + day + "/" + meal).Set(newMeal)
+	return err
+
+}
+
+func getRecipeChanges(req *http.Request) (RecipeChanges, error) {
+	var r RecipeChanges
+	user, err := getUser(req)
+
+	if err != nil {
+		return r, err
+	}
+
+	offset := req.URL.Query().Get("offset")
+	mealType := req.URL.Query().Get("meal_type")
+
+	diet := user.Diet
+	exclusions := strings.Join(user.Exclusions, ",")
+
+	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/search?"
+	url += "diet=" + diet + "&excludeIngredients=" + exclusions + "&number=10" + "&offset=" + offset +
+		"&type=" + mealType
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+
+	request, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		return r, err
+	}
+
+	request.Header.Set("X-Mashape-Key", spoonToken)
+
+	res, err := client.Do(request)
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(res.Body)
+
+	if err != nil {
+		fmt.Print("ERROR: ", err)
+	}
+
+	defer res.Body.Close()
+
+	json.Unmarshal(buf.Bytes(), &r)
+
+	return r, err
+}
+
+func getShoppingListForUser(req *http.Request) (map[string]map[string]map[string]float32, error) {
+	userID := req.URL.Query().Get("user_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	var shopList map[string]map[string]map[string]float32
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID + "/shopping_list").Value(&shopList)
+	return shopList, err
+}
+
+func createShoppingListForUser(req *http.Request) error {
 	recipeIDs := strings.Split(req.URL.Query().Get("recipe_ids"), ",")
 
 	var shopList = make(map[string]map[string]map[string]float32)
 	for _, id := range recipeIDs {
 		r, err := getRecipeDetails(req, id)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		ingredients := r.Ingredients
 		for _, ingredient := range ingredients {
-			category := strings.Split(ingredient.Category, ";")[0]
+			category := replacer.Replace(strings.Split(ingredient.Category, ";")[0])
+			unit := replacer.Replace(ingredient.Unit)
+			if unit == "" {
+				unit = "empty unit"
+			}
 			name := ingredient.Name
 			if name == "water" {
 				continue
@@ -312,18 +333,34 @@ func createShoppingList(req *http.Request) (map[string]map[string]map[string]flo
 				shopList[category] = itemMap
 			}
 
-			_, unitExists := itemMap[name][ingredient.Unit]
+			_, unitExists := itemMap[name][unit]
 
 			if !unitExists {
-				itemMap[name][ingredient.Unit] = float32(0)
+				itemMap[name][unit] = float32(0)
 			}
-			itemMap[name][ingredient.Unit] += ingredient.Amount
+			itemMap[name][unit] += ingredient.Amount
 
 		}
 
 	}
 
-	return shopList, nil
+	return writeShoppingListToUser(req, shopList)
+}
+
+func writeShoppingListToUser(req *http.Request, shopList map[string]map[string]map[string]float32) error {
+	userID := req.URL.Query().Get("user_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID + "/shopping_list").Set(&shopList)
+	if err != nil {
+		return errors.New("FIREBASE ERROR: " + err.Error())
+	}
+	return err
 }
 
 func getRecipeDetails(req *http.Request, recipeID string) (Recipe, error) {

@@ -391,6 +391,9 @@ func getRecipeDetails(req *http.Request, recipeID string) (Recipe, error) {
 		defer res.Body.Close()
 		json.NewDecoder(res.Body).Decode(&recipe)
 
+		if recipe.Title == "" {
+			return recipe, errors.New("something went wrong, the recipe name is empty")
+		}
 		cache.Set("recipe_id:"+recipeID, recipe, time.Hour*1000)
 		return recipe, nil
 	}

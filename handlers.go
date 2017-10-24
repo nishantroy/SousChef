@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 func handler(w http.ResponseWriter, _ *http.Request) {
@@ -57,50 +56,16 @@ func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
 // do unit conversions, create shopping list, and save to Firebase
 func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	recipeIDs := strings.Split(req.URL.Query().Get("recipe_ids"), ",")
+	shopList, err := createShoppingList(req)
 
-	var shop_list = make(map[string]map[string][]QuantityWithUnit)
-	for _, id := range recipeIDs {
-		r, err := getRecipeDetails(req, id)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, err)
-		} else {
-
-			ingredients := r.Ingredients
-			for _, ingredient := range ingredients {
-				category := strings.Split(ingredient.Category, ";")[0]
-				name := ingredient.Name
-				if name == "water" {
-					continue
-				}
-				amount_with_unit := QuantityWithUnit{Quantity: ingredient.Amount, Unit: ingredient.Unit}
-
-				item_quantity_map, cat_exists := shop_list[category]
-				if !cat_exists {
-					fmt.Fprintln(w, "DIDN'T FIND THIS CATEGORY: ", category)
-					item_quantity_map := make(map[string][]QuantityWithUnit)
-					item_quantity_map[name] = append(item_quantity_map[name], amount_with_unit)
-					shop_list[category] = item_quantity_map
-
-				} else {
-					_, item_exists := item_quantity_map[name]
-					if !item_exists {
-						item_quantity_slice := []QuantityWithUnit{amount_with_unit}
-						item_quantity_map[name] = item_quantity_slice
-						shop_list[category] = item_quantity_map
-					} else {
-						shop_list[category][name] = append(shop_list[category][name], amount_with_unit)
-					}
-				}
-
-			}
-		}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
 	}
-	json.NewEncoder(w).Encode(shop_list)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(shopList)
 
-	//w.WriteHeader(http.StatusOK)
-	//fmt.Fprint(w, "Generating shopping list for recipes ", recipeIDs)
 }
 
 func handleCreateProfile(w http.ResponseWriter, req *http.Request) {

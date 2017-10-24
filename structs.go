@@ -4,7 +4,7 @@ package mas
 type User struct {
 	Name           string   `json:"name"`
 	Days           []Day    `json:"weekly_plan"`
-	Diet           []string `json:"diet"`
+	Diet           string   `json:"diet"`
 	Exclusions     []string `json:"exclusions"`
 	WeeklyPlanDate string   `json:"weekly_plan_date"`
 }
@@ -61,11 +61,6 @@ type ingredient struct {
 	Amount         float32 `json:"amount"`
 	Unit           string  `json:"unitShort"`
 	FullDescriptor string  `json:"originalString"`
-}
-
-type QuantityWithUnit struct {
-	Quantity float32 `json:"quantity"`
-	Unit     string  `json:"unit"`
 }
 
 // WeekPlan holds a week's worth of recipes

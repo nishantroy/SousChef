@@ -43,7 +43,7 @@ func getUser(req *http.Request) (User, error) {
 func createUserProfile(req *http.Request) error {
 	userID := req.URL.Query().Get("user_id")
 	userName := req.URL.Query().Get("name")
-	diet := strings.Split(req.URL.Query().Get("diet"), ",")
+	diet := req.URL.Query().Get("diet")
 	exclusions := strings.Split(req.URL.Query().Get("exclusions"), ",")
 
 	user := User{Name: userName, Diet: diet, Exclusions: exclusions}
@@ -67,7 +67,7 @@ func updateUserProfile(req *http.Request) error {
 	}
 
 	userID := req.URL.Query().Get("user_id")
-	diet := strings.Split(req.URL.Query().Get("diet"), ",")
+	diet := req.URL.Query().Get("diet")
 	exclusions := strings.Split(req.URL.Query().Get("exclusions"), ",")
 
 	user.Diet = diet
@@ -142,7 +142,7 @@ func getRecipeChanges(req *http.Request) (RecipeChanges, error) {
 	offset := req.URL.Query().Get("offset")
 	mealType := req.URL.Query().Get("meal_type")
 
-	diet := strings.Join(user.Diet, ",")
+	diet := user.Diet
 	exclusions := strings.Join(user.Exclusions, ",")
 
 	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/search?"
@@ -185,7 +185,7 @@ func createWeeklyPlanForUser(req *http.Request) error {
 
 	fmt.Println(user)
 
-	diet := strings.Join(user.Diet, ",")
+	diet := user.Diet
 	exclusions := strings.Join(user.Exclusions, ",")
 
 	url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/mealplans/generate?"
@@ -276,6 +276,54 @@ func writeWeeklyPlanToUser(req *http.Request, wp WeekPlan) error {
 
 	err = f.Child("users/" + userID + "/weekly_plan_date").Set(time.Now().Format("02-01-2006"))
 	return err
+}
+
+func createShoppingList(req *http.Request) (map[string]map[string]map[string]float32, error) {
+	recipeIDs := strings.Split(req.URL.Query().Get("recipe_ids"), ",")
+
+	var shopList = make(map[string]map[string]map[string]float32)
+	for _, id := range recipeIDs {
+		r, err := getRecipeDetails(req, id)
+		if err != nil {
+			return nil, err
+		}
+
+		ingredients := r.Ingredients
+		for _, ingredient := range ingredients {
+			category := strings.Split(ingredient.Category, ";")[0]
+			name := ingredient.Name
+			if name == "water" {
+				continue
+			}
+
+			_, catExists := shopList[category]
+			if !catExists {
+				itemMap := make(map[string]map[string]float32)
+				shopList[category] = itemMap
+
+			}
+			itemMap := shopList[category]
+
+			_, itemExists := itemMap[name]
+
+			if !itemExists {
+				unitMap := make(map[string]float32)
+				itemMap[name] = unitMap
+				shopList[category] = itemMap
+			}
+
+			_, unitExists := itemMap[name][ingredient.Unit]
+
+			if !unitExists {
+				itemMap[name][ingredient.Unit] = float32(0)
+			}
+			itemMap[name][ingredient.Unit] += ingredient.Amount
+
+		}
+
+	}
+
+	return shopList, nil
 }
 
 func getRecipeDetails(req *http.Request, recipeID string) (Recipe, error) {

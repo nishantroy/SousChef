@@ -17,6 +17,8 @@ func init() {
 	// Shopping list handlers
 	http.HandleFunc("/api/v1/users/shopping_list", handleGetShoppingList)
 	http.HandleFunc("/api/v1/users/shopping_list_create", handleCreateShoppingList)
+	http.HandleFunc("/api/v1/users/item_checked", handleCheckGroceryItem)
+	http.HandleFunc("/api/v1/users/item_unchecked", handleUncheckGroceryItem)
 
 	// User profile handlers
 	http.HandleFunc("/api/v1/users/create_profile", handleCreateProfile)

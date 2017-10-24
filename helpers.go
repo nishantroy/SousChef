@@ -12,6 +12,7 @@ import (
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
+	"google.golang.org/appengine/log"
 
 	"errors"
 	"github.com/karlseguin/ccache"
@@ -116,6 +117,8 @@ func createWeeklyPlanForUser(req *http.Request) error {
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
+
+	log.Debugf(ctx, "URL: " + url)
 
 	request, err := http.NewRequest("GET", url, nil)
 
@@ -280,14 +283,14 @@ func getRecipeChanges(req *http.Request) (RecipeChanges, error) {
 	return r, err
 }
 
-func getShoppingListForUser(req *http.Request) (map[string]map[string]map[string]float32, error) {
+func getShoppingListForUser(req *http.Request) (map[string]map[string]GroceryItem, error) {
 	userID := req.URL.Query().Get("user_id")
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
 	f := firego.New(fireURL, client)
 
-	var shopList map[string]map[string]map[string]float32
+	var shopList map[string]map[string]GroceryItem
 
 	f.Auth(fireToken)
 
@@ -298,7 +301,7 @@ func getShoppingListForUser(req *http.Request) (map[string]map[string]map[string
 func createShoppingListForUser(req *http.Request) error {
 	recipeIDs := strings.Split(req.URL.Query().Get("recipe_ids"), ",")
 
-	var shopList = make(map[string]map[string]map[string]float32)
+	var shopList = make(map[string]map[string]GroceryItem)
 	for _, id := range recipeIDs {
 		r, err := getRecipeDetails(req, id)
 		if err != nil {
@@ -310,7 +313,7 @@ func createShoppingListForUser(req *http.Request) error {
 			category := replacer.Replace(strings.Split(ingredient.Category, ";")[0])
 			unit := replacer.Replace(ingredient.Unit)
 			if unit == "" {
-				unit = "empty unit"
+				unit = "count"
 			}
 			name := ingredient.Name
 			if name == "water" {
@@ -319,7 +322,7 @@ func createShoppingListForUser(req *http.Request) error {
 
 			_, catExists := shopList[category]
 			if !catExists {
-				itemMap := make(map[string]map[string]float32)
+				itemMap := make(map[string]GroceryItem)
 				shopList[category] = itemMap
 
 			}
@@ -328,17 +331,17 @@ func createShoppingListForUser(req *http.Request) error {
 			_, itemExists := itemMap[name]
 
 			if !itemExists {
-				unitMap := make(map[string]float32)
+				unitMap := GroceryItem{UnitMap: make(map[string]float32)}
 				itemMap[name] = unitMap
 				shopList[category] = itemMap
 			}
 
-			_, unitExists := itemMap[name][unit]
+			_, unitExists := itemMap[name].UnitMap[unit]
 
 			if !unitExists {
-				itemMap[name][unit] = float32(0)
+				itemMap[name].UnitMap[unit] = float32(0)
 			}
-			itemMap[name][unit] += ingredient.Amount
+			itemMap[name].UnitMap[unit] += ingredient.Amount
 
 		}
 
@@ -347,7 +350,7 @@ func createShoppingListForUser(req *http.Request) error {
 	return writeShoppingListToUser(req, shopList)
 }
 
-func writeShoppingListToUser(req *http.Request, shopList map[string]map[string]map[string]float32) error {
+func writeShoppingListToUser(req *http.Request, shopList map[string]map[string]GroceryItem) error {
 	userID := req.URL.Query().Get("user_id")
 
 	ctx := appengine.NewContext(req)
@@ -360,6 +363,21 @@ func writeShoppingListToUser(req *http.Request, shopList map[string]map[string]m
 	if err != nil {
 		return errors.New("FIREBASE ERROR: " + err.Error())
 	}
+	return err
+}
+
+func updateGroceryItemDoneForUser(req *http.Request, b bool) error {
+	userID := req.URL.Query().Get("user_id")
+	category := req.URL.Query().Get("category")
+	item := req.URL.Query().Get("item")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID + "/shopping_list/" + category + "/" + item + "/Done").Set(&b)
 	return err
 }
 

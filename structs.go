@@ -82,3 +82,9 @@ type Meal struct {
 	CookTime int
 	Image    string
 }
+
+// GroceryItem is each entry in the shopping list
+type GroceryItem struct {
+	UnitMap map[string]float32
+	Done    bool
+}

@@ -67,6 +67,32 @@ func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
 	//fmt.Fprintln(w, "SUCCESS!")
 }
 
+func handleCheckGroceryItem(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := updateGroceryItemDoneForUser(req, true)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func handleUncheckGroceryItem(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := updateGroceryItemDoneForUser(req, false)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "SOME ERROR OCCURRED", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func handleCreateProfile(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err := createUserProfile(req)

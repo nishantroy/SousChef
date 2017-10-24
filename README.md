@@ -104,65 +104,27 @@ RESPONSE FORMAT
 
     {
         "Bakery,Bread": {
-            "bread": {
-                "oz": 8
-            }
-        },
-        "Canned and Jarred": {
-            "anchovies": {
-                "empty unit": 2
-            },
-            "capers": {
-                "Tbsp": 1
-            },
-            "olives": {
-                "Tbsp": 2
-            },
-            "tuna": {
-                "oz": 6
-            }
-        },
-        "Milk, Eggs, Other Dairy": {
-            "hard cooked egg": {
-                "empty unit": 1
+            "french baguette": {
+                "UnitMap": {
+                    "count": 0.5
+                },
+                "Done": false
             }
         },
         "Oil, Vinegar, Salad Dressing": {
             "olive oil": {
-                "Tbsp": 5,
-                "tsp": 2
-            }
-        },
-        "Produce": {
-            "fresh basil": {
-                "cup": 0.25
+                "UnitMap": {
+                    "Tbsp": 6,
+                    "cup": 0.5,
+                    "ml": 75
+                },
+                "Done": false
             },
-            "fresh flat-leaf parsley": {
-                "handful": 1
-            },
-            "garlic": {
-                "clove": 1
-            },
-            "garlic clove": {
-                "empty unit": 1
-            },
-            "lemon juice": {
-                "Tbsp": 1
-            },
-            "plum tomato": {
-                "cup": 1
-            },
-            "red onion": {
-                "cup": 0.33333334
-            }
-        },
-        "Spices and Seasonings": {
-            "black pepper": {
-                "tsp": 0.25
-            },
-            "kosher salt": {
-                "servings": 4,
-                "tsp": 0.25
+            "red wine vinegar": {
+                "UnitMap": {
+                    "Tbsp": 1
+                },
+                "Done": false
             }
         }
     }
@@ -175,6 +137,32 @@ PARAMS
         * UID from Firebase auth
     - recipe_ids(comma-separated ints)
         * Chosen by user
+
+RESPONSE FORMAT (empty)
+```
+
+#### GET /api/v1/users/item_checked
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+    - category (string)
+        * category of shopping list
+    - item (string)
+        * name of item
+
+RESPONSE FORMAT (empty)
+```
+
+#### GET /api/v1/users/item_unchecked
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+    - category (string)
+        * category of shopping list
+    - item (string)
+        * name of item
 
 RESPONSE FORMAT (empty)
 ```

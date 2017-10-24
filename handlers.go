@@ -56,19 +56,51 @@ func handleGetShoppingList(w http.ResponseWriter, req *http.Request) {
 // Will take in comma separated list of recipe IDs chosen by user, fetch the ingredients,
 // do unit conversions, create shopping list, and save to Firebase
 func handleCreateShoppingList(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	recipeIDs := strings.Split(req.URL.Query().Get("recipe_ids"), ",")
-	fmt.Println(len(recipeIDs))
+	//fmt.Println(len(recipeIDs))
+	var shop_list = make(map[string]map[string][]QuantityWithUnit)
 	for i := 0; i < len(recipeIDs); i++ {
 		id := recipeIDs[i]
 		r, err := getRecipeDetails(req, id)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, err)
 		} else {
-			fmt.Fprintln(w, r.Ingredients)
+			//w.WriteHeader(http.StatusOK)
+
+			ingredients := r.Ingredients
+			for j := 0; j < len(ingredients); j++ {
+				ingredient := ingredients[j]
+				category := ingredient.Category
+				name := ingredient.Name
+				amount_with_unit := QuantityWithUnit{Quantity: ingredient.Amount, Unit: ingredient.Unit}
+
+				item_quantity_map, cat_exists := shop_list[category]
+				if !cat_exists {
+					item_quantity_map := make(map[string][]QuantityWithUnit)
+					item_quantity_map[name] = append(item_quantity_map[name], amount_with_unit)
+					shop_list[category] = item_quantity_map
+
+				} else {
+					_, item_exists := item_quantity_map[name]
+					if !item_exists {
+						item_quantity_map := make(map[string][]QuantityWithUnit)
+						item_quantity_map[name] = append(item_quantity_map[name], amount_with_unit)
+						shop_list[category] = item_quantity_map
+
+					} else {
+						shop_list[category][name] = append(shop_list[category][name], amount_with_unit)
+					}
+				}
+
+			}
 		}
 	}
+	json.NewEncoder(w).Encode(shop_list)
 
-	fmt.Fprint(w, "Generating shopping list for recipes ", recipeIDs)
+	//w.WriteHeader(http.StatusOK)
+	//fmt.Fprint(w, "Generating shopping list for recipes ", recipeIDs)
 }
 
 func handleCreateProfile(w http.ResponseWriter, req *http.Request) {

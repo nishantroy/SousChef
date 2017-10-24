@@ -63,6 +63,11 @@ type ingredient struct {
 	FullDescriptor string  `json:"originalString"`
 }
 
+type QuantityWithUnit struct {
+	Quantity float32 `json:"quantity"`
+	Unit     string  `json:"unit"`
+}
+
 // WeekPlan holds a week's worth of recipes
 type WeekPlan struct {
 	Days []Day

@@ -103,46 +103,76 @@ PARAMS
 RESPONSE FORMAT
 
     {
-        [
-            {
-                "category": "dairy",
-                "items":
-                    [
-                        {
-                            "name": "milk",
-                            "quantity": 2,
-                            "unit": oz
-                        },
-                        {
-                            "name": "cheese",
-                            "quantity": 20,
-                            "unit": oz
-                        }
-                    ]
-            },
-            {
-                "category": "meat",
-                "items":
-                    [
-                        {
-                            "name": "chicken",
-                            "quantity": 100,
-                            "unit": g
-                        },
-                        {
-                            "name": "beef",
-                            "quantity": 150,
-                            "unit": g
-                        }
-                ]
-            }
-        ]
+    	"Bakery,Bread": {
+    		"bread": {
+    			"oz": 8
+    		}
+    	},
+    	"Canned and Jarred": {
+    		"anchovies": {
+    			"empty unit": 2
+    		},
+    		"capers": {
+    			"Tbsp": 1
+    		},
+    		"olives": {
+    			"Tbsp": 2
+    		},
+    		"tuna": {
+    			"oz": 6
+    		}
+    	},
+    	"Milk, Eggs, Other Dairy": {
+    		"hard cooked egg": {
+    			"empty unit": 1
+    		}
+    	},
+    	"Oil, Vinegar, Salad Dressing": {
+    		"olive oil": {
+    			"Tbsp": 5,
+    			"tsp": 2
+    		}
+    	},
+    	"Produce": {
+    		"fresh basil": {
+    			"cup": 0.25
+    		},
+    		"fresh flat-leaf parsley": {
+    			"handful": 1
+    		},
+    		"garlic": {
+    			"clove": 1
+    		},
+    		"garlic clove": {
+    			"empty unit": 1
+    		},
+    		"lemon juice": {
+    			"Tbsp": 1
+    		},
+    		"plum tomato": {
+    			"cup": 1
+    		},
+    		"red onion": {
+    			"cup": 0.33333334
+    		}
+    	},
+    	"Spices and Seasonings": {
+    		"black pepper": {
+    			"tsp": 0.25
+    		},
+    		"kosher salt": {
+    			"servings": 4,
+    			"tsp": 0.25
+    		}
+    	}
     }
 ```
 
 #### GET /api/v1/users/shopping_list_create
 ```
 PARAMS
+    - user_id (string)
+        * UID from Firebase auth
     - recipe_ids(comma-separated ints)
         * Chosen by user
 

@@ -167,28 +167,6 @@ func handleGetRecipeSteps(w http.ResponseWriter, req *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(recipe.Instructions)
-
-	//var steps []Instruction
-	//
-	//recipeCached := cache.Get("recipe_id:" + recipeID)
-	//
-	//if recipeCached == nil {
-	//	recipe, err := getRecipeDetails(req)
-	//
-	//	if err != nil {
-	//		w.WriteHeader(http.StatusInternalServerError)
-	//		fmt.Fprintln(w, err)
-	//		return
-	//	}
-	//
-	//	cache.Set("recipe_id:"+recipeID, recipe, time.Hour*1000)
-	//	steps = recipe.Instructions
-	//} else {
-	//	steps = recipeCached.Value().(Recipe).Instructions
-	//}
-	//
-	//w.WriteHeader(http.StatusOK)
-	//json.NewEncoder(w).Encode(steps)
 }
 
 // Takes in a recipeID, gets the details for it from the API/cache, and returns
@@ -206,57 +184,75 @@ func handleGetRecipeDetails(w http.ResponseWriter, req *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(recipe)
-
-	//recipeID := req.URL.Query().Get("recipe_id")
-	//
-	//var recipe Recipe
-	//recipeCached := cache.Get("recipe_id:" + recipeID)
-	//
-	//if recipeCached == nil {
-	//	recipeCached, err := getRecipeDetails(req)
-	//
-	//	if err != nil {
-	//		w.WriteHeader(http.StatusInternalServerError)
-	//		fmt.Fprintln(w, err)
-	//		return
-	//	}
-	//
-	//	cache.Set("recipe_id:"+recipeID, recipeCached, time.Hour*1000)
-	//	recipe = recipeCached
-	//} else {
-	//	recipe = recipeCached.Value().(Recipe)
-	//}
-	//
-	//w.WriteHeader(http.StatusOK)
-	//json.NewEncoder(w).Encode(recipe)
-
 }
 
-/* Returns recipe for Leek & Cheese Pie. Static placeholder recipe for testing
-func handleStaticRecipeDetails(w http.ResponseWriter, _ *http.Request) {
+func handleSaveCurrentRecipeProgress(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := SaveCurrentRecipeProgress(req)
 
-	var recipe Recipe
-
-	recipe.Title = "Leek & Cheese Pie"
-	recipe.CookTime = 75
-	recipe.ID = 116679
-	recipe.Image = "https://spoonacular.com/recipeImages/116679-556x370.jpg"
-	recipe.Cheap = false
-	recipe.Vegetarian = true
-	recipe.Vegan = false
-	recipe.Ketogenic = false
-	recipe.Servings = 4
-
-	recipe.Ingredients = []Ingredient{
-		{ID: 18371, Category: "Baking", Name: "baking powder", Amount: 2, Unit: "tsp",
-			FullDescriptor: "2 teaspoons baking powder"},
-		{ID: 1001, Category: "Milk, Eggs, Other Dairy", Name: "butter", Amount: 100, Unit: "g",
-			FullDescriptor: "100 g butter or 100 g margarine"},
-		{ID: 2031, Category: "Spices and Seasonings", Name: "cayenne pepper", Amount: 4,
-			Unit: "servings", FullDescriptor: "cayenne pepper"},
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
 	}
-
-	json.NewEncoder(w).Encode(recipe)
-
 }
-*/
+
+func handleGetCurrentRecipeProgress(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	progress, err := GetCurrentRecipeProgress(req)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(progress)
+}
+
+func handleDeleteCurrentRecipeProgress(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := DeleteCurrentRecipeProgress(req)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+}
+
+func handleAddFavoriteRecipe(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	err := AddFavoriteRecipe(req)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+}
+
+func handleGetFavoriteRecipes(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	favorites, err := GetFavoriteRecipes(req)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(favorites)
+}
+
+func handleDeleteFavoriteRecipe(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := DeleteFavoriteRecipe(req)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err)
+		return
+	}
+}

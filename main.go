@@ -25,7 +25,17 @@ func init() {
 	http.HandleFunc("/api/v1/users/get_profile", handleGetProfile)
 	http.HandleFunc("/api/v1/users/update_profile", handleUpdateProfile)
 
-	// RECIPE HANDLERS
+	// User favorites handlers
+	http.HandleFunc("/api/v1/users/add_favorite", handleAddFavoriteRecipe)
+	http.HandleFunc("/api/v1/users/get_favorites", handleGetFavoriteRecipes)
+	http.HandleFunc("/api/v1/users/delete_favorite", handleDeleteFavoriteRecipe)
+
+	// User persistence handlers
+	http.HandleFunc("/api/v1/users/save_current_recipe_progress", handleSaveCurrentRecipeProgress)
+	http.HandleFunc("/api/v1/users/get_current_recipe_progress", handleGetCurrentRecipeProgress)
+	http.HandleFunc("/api/v1/users/delete_current_recipe_progress", handleDeleteCurrentRecipeProgress)
+
+	// Recipe handlers
 	http.HandleFunc("/api/v1/recipes/recipe_steps", handleGetRecipeSteps)
 	http.HandleFunc("/api/v1/recipes/recipe_details", handleGetRecipeDetails)
 	http.HandleFunc("/api/v1/recipes/recipe_changes", handleGetRecipeChanges)

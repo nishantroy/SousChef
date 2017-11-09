@@ -167,6 +167,79 @@ PARAMS
 RESPONSE FORMAT (empty)
 ```
 
+#### GET /api/v1/users/save_current_recipe_progress
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+    - recipe_id (int)
+        * Recipe that user is currently cooking
+    - step (int)
+        * Step number that user has reached
+
+RESPONSE FORMAT (empty)
+```
+
+#### GET /api/v1/users/get_current_recipe_progress
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+
+RESPONSE FORMAT
+
+    {
+        "recipe_id": 29,
+        "step": 3
+    }
+
+```
+
+#### GET /api/v1/users/delete_current_recipe_progress
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+
+RESPONSE FORMAT (empty)
+```
+
+#### GET /api/v1/users/add_favorite
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+    - recipe_id (int)
+        * Recipe that user marked as favorite
+
+RESPONSE FORMAT (empty)
+```
+
+#### GET /api/v1/users/get_favorites
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+
+RESPONSE FORMAT
+    {
+        "475": true,
+        "476": true
+    }
+```
+
+#### GET /api/v1/users/delete_favorite
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+    - recipe_id (string)
+        * Recipe that user unmarked from favorites
+
+RESPONSE FORMAT (empty)
+```
+
+
 #### GET /api/v1/recipes/recipe_steps
 
 ```

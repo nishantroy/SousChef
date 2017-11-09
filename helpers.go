@@ -12,7 +12,6 @@ import (
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
-	"google.golang.org/appengine/log"
 
 	"errors"
 	"github.com/karlseguin/ccache"
@@ -117,8 +116,6 @@ func createWeeklyPlanForUser(req *http.Request) error {
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
-
-	log.Debugf(ctx, "URL: " + url)
 
 	request, err := http.NewRequest("GET", url, nil)
 
@@ -418,6 +415,100 @@ func getRecipeDetails(req *http.Request, recipeID string) (Recipe, error) {
 
 	return recipeCached.Value().(Recipe), nil
 
+}
+
+// SaveCurrentRecipeProgress is to save a user's current session for Alexa/Apple Watch (persistence)
+func SaveCurrentRecipeProgress(req *http.Request) error {
+	userID := req.URL.Query().Get("user_id")
+	recipeID := req.URL.Query().Get("recipe_id")
+	step := req.URL.Query().Get("step")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	currentProgress := map[string]string{
+		"recipe_id": recipeID,
+		"step":      step,
+	}
+	err := f.Child("alexa/" + userID).Set(currentProgress)
+	return err
+}
+
+// GetCurrentRecipeProgress is to retrieve a user's current session for Alexa/Apple Watch (persistence)
+func GetCurrentRecipeProgress(req *http.Request) (interface{}, error) {
+	userID := req.URL.Query().Get("user_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	var currentProgress map[string]interface{}
+	err := f.Child("alexa/" + userID).Value(&currentProgress)
+	return currentProgress, err
+}
+
+// DeleteCurrentRecipeProgress is to delete the user's current session for Alexa/Apple watch
+func DeleteCurrentRecipeProgress(req *http.Request) error {
+	userID := req.URL.Query().Get("user_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err := f.Child("alexa/" + userID).Set(nil)
+	return err
+}
+
+// AddFavoriteRecipe is to add a recipe ID to a user's favorites list
+func AddFavoriteRecipe(req *http.Request) error {
+	userID := req.URL.Query().Get("user_id")
+	recipeID := req.URL.Query().Get("recipe_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID + "/favorites/" + recipeID).Set(true)
+	return err
+}
+
+// GetFavoriteRecipes is to get a user's favorites list
+func GetFavoriteRecipes(req *http.Request) (map[string]interface{}, error) {
+	userID := req.URL.Query().Get("user_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	var favorites map[string]interface{}
+	err := f.Child("users/" + userID + "/favorites").Value(&favorites)
+	return favorites, err
+}
+
+// DeleteFavoriteRecipe is to remove a recipe ID from a user's favorites list
+func DeleteFavoriteRecipe(req *http.Request) error {
+	userID := req.URL.Query().Get("user_id")
+	recipeID := req.URL.Query().Get("recipe_id")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + userID + "/favorites/" + recipeID).Remove()
+	return err
 }
 
 // UnmarshalJSON is overwritten for the WeekPlan struct to handle the nested JSON returned from the API gracefully

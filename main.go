@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+func handler(w http.ResponseWriter, _ *http.Request) {
+	fmt.Fprint(w, "Welcome to the SousChef API!")
+}
+
 func init() {
 
 	// USER HANDLERS

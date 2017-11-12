@@ -513,6 +513,7 @@ func DeleteFavoriteRecipe(req *http.Request) error {
 	return err
 }
 
+// GenerateAlexaAuthToken creates a unique auth token for a user to sign in
 func GenerateAlexaAuthToken(req *http.Request) int {
 	userID := req.URL.Query().Get("user_id")
 
@@ -534,18 +535,19 @@ func GenerateAlexaAuthToken(req *http.Request) int {
 	return token
 }
 
-func AlexaAuthorize(req *http.Request) error {
+// AlexaAuthorize takes in an alexa_id and an auth token to authorize a user and returns their userID if successful
+func AlexaAuthorize(req *http.Request) (string, error) {
 	token := req.URL.Query().Get("token")
-	alexa_id := req.URL.Query().Get("alexa_id")
+	alexaID := req.URL.Query().Get("alexa_id")
 	key := fmt.Sprintf("alexa_id: " + token)
 
 	item := cache.Get(key)
 
 	if item == nil {
-		return fmt.Errorf("that token doesn't exist")
+		return "", fmt.Errorf("that token doesn't exist")
 	} else if item.Expired() {
 		cache.Delete(key)
-		return fmt.Errorf("that token is expired, please create a new one")
+		return "", fmt.Errorf("that token is expired, please create a new one")
 	}
 
 	ctx := appengine.NewContext(req)
@@ -554,22 +556,39 @@ func AlexaAuthorize(req *http.Request) error {
 
 	f.Auth(fireToken)
 
-	err := f.Child("users/" + item.Value().(string) + "/alexa_id").Set(alexa_id)
+	err := f.Child("users/" + item.Value().(string) + "/alexa_id").Set(alexaID)
 
 	if err != nil {
-		return fmt.Errorf("error writing to Firebase, please try again")
+		return "", fmt.Errorf("error writing to Firebase, please try again")
 	}
 
 	cache.Delete(key)
 
-	return nil
+	return item.Value().(string), nil
 
 }
 
-func GetRecipeForAlexa(w http.ResponseWriter, req *http.Request) (map[string]interface{}, error) {
-	alexaID := req.URL.Query().Get("alexa_id")
+// GetRecipeForAlexa returns the recipe details required for Alexa
+func GetRecipeForAlexa(req *http.Request) (map[string]interface{}, error) {
+	userID := req.URL.Query().Get("user_id")
 	day := req.URL.Query().Get("day")
-	meal_type := req.URL.Query().Get("meal_type")
+	mealType := req.URL.Query().Get("meal_type")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	var rec map[string]interface{}
+
+	err := f.Child("users/" + userID + "/weekly_plan/" + day + "/" + mealType).Value(&rec)
+	return rec, err
+}
+
+// CheckAlexaAuth checks to see if the alexa device is authorized, and returns the userID if successful
+func CheckAlexaAuth(req *http.Request) (string, error) {
+	alexaID := req.URL.Query().Get("alexa_id")
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
@@ -578,17 +597,18 @@ func GetRecipeForAlexa(w http.ResponseWriter, req *http.Request) (map[string]int
 	f.Auth(fireToken)
 
 	var user map[string]interface{}
-	fb := f.Child("users").OrderBy("alexa_id").EqualTo(alexaID)
 
-	err := fb.Value(&user)
+	err := f.Child("users").OrderBy("alexa_id").EqualTo(alexaID).Value(&user)
 
-	var rec map[string]interface{}
-	for k := range user {
-		f.Child("users/" + k + "/weekly_plan/" + day + "/" + meal_type).Value(&rec)
-		return rec, err
+	if err != nil {
+		return "", err
 	}
 
-	return rec, err
+	for k := range user {
+		return k, err
+	}
+
+	return "", fmt.Errorf("something went wrong signing in")
 }
 
 // UnmarshalJSON is overwritten for the WeekPlan struct to handle the nested JSON returned from the API gracefully

@@ -39,17 +39,3 @@ func handleUpdateMeal(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
-
-func handleGetRecipeForAlexa(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	rec, err := GetRecipeForAlexa(w, req)
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Errorf("error occurred")
-		return
-	}
-
-	json.NewEncoder(w).Encode(rec)
-}

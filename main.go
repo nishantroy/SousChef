@@ -32,6 +32,7 @@ func init() {
 	// Alexa handlers
 	http.HandleFunc("/api/v1/alexa/get_alexa_auth_token", handleGenerateAlexaAuthToken)
 	http.HandleFunc("/api/v1/alexa/authorize_alexa", handleAlexaAuth)
+	http.HandleFunc("/api/v1/alexa/check_auth", handleCheckAlexaAuth)
 	http.HandleFunc("/api/v1/alexa/get_recipe_details", handleGetRecipeForAlexa)
 
 	// User favorites handlers

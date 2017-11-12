@@ -477,3 +477,75 @@ RESPONSE FORMAT
         "totalResults": 35294
     }
 ```
+
+### ALEXA
+
+#### GET /api/v1/alexa/get_alexa_auth_token
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+
+RESPONSE FORMAT (4-digit integer)
+
+    7462
+
+```
+
+#### GET /api/v1/alexa/authorize_alexa
+```
+PARAMS
+    - alexa_id (string)
+        * UID from Alexa session variable
+    - token (int)
+        * Unique auth token from API
+
+RESPONSE FORMAT (conditional)
+
+    if authorization succeeded:
+        user_id (string)
+            * UID from Firebase auth
+    else:
+        false (boolean)
+
+
+```
+
+#### GET /api/v1/alexa/check_auth
+```
+PARAMS
+    - alexa_id (string)
+        * UID from Alexa session variable
+
+RESPONSE FORMAT (conditional)
+
+    if device is authorized:
+        user_id (string)
+            * UID from Firebase auth
+    else:
+        false (boolean)
+
+
+```
+
+#### GET /api/v1/alexa/get_recipe_details
+```
+PARAMS
+    - user_id (string)
+        * UID from Firebase auth
+    - day (int)
+        * 0 - 6
+    - meal_type (string)
+        * breakfast, lunch, dinner
+
+RESPONSE FORMAT
+
+    {
+        "CookTime": 90,
+        "ID": 49993,
+        "Image": "https://spoonacular.com/recipeImages/49993-556x370.jpg",
+        "Name": "Cream Cheese Banana Nut Bread"
+    }
+
+
+```

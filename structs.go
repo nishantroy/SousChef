@@ -26,6 +26,7 @@ type Recipe struct {
 	Ketogenic    bool          `json:"ketogenic"`
 	Whole30      bool          `json:"whole30"`
 	Servings     int           `json:"servings"`
+	Nutrition    nutrition     `json:"nutrition"`
 }
 
 // RecipeChanges gives the user options to change a recipe
@@ -61,6 +62,20 @@ type ingredient struct {
 	Amount         float32 `json:"amount"`
 	Unit           string  `json:"unitShort"`
 	FullDescriptor string  `json:"originalString"`
+}
+
+// nutrition contains nutrient details and caloric breakdown
+type nutrition struct {
+	Nutrients        []nutrient         `json:"nutrients"`
+	CaloricBreakdown map[string]float32 `json:"caloricBreakdown"`
+}
+
+// nutrient defines the fields for a nutrient of a recipe
+type nutrient struct {
+	Title   string  `json:"title"`
+	Amount  float32 `json:"amount"`
+	Unit    string  `json:"unit"`
+	Percent float32 `json:"percentOfDailyNeeds"`
 }
 
 // WeekPlan holds a week's worth of recipes

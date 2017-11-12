@@ -1,8 +1,8 @@
 package mas
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 

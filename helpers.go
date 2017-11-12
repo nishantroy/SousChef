@@ -384,7 +384,8 @@ func getRecipeDetails(req *http.Request, recipeID string) (Recipe, error) {
 	if recipeCached == nil {
 		var recipe Recipe
 
-		url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID + "/information"
+		url := "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + recipeID +
+			"/information?includeNutrition=true"
 
 		ctx := appengine.NewContext(req)
 		client := urlfetch.Client(ctx)

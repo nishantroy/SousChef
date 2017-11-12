@@ -369,7 +369,27 @@ RESPONSE FORMAT (array of length 1 containing array "steps" of length N)
         "lowFodmap":false,
         "ketogenic":false,
         "whole30":true,
-        "servings":30
+        "servings":30,
+        "nutrition": {
+            "nutrients": [
+                {
+                    "title": "Calories",
+                    "amount": 29.98,
+                    "unit": "cal",
+                    "percentOfDailyNeeds": 1.5
+                },
+                {
+                    "title": "Fat",
+                    "amount": 2.54,
+                    "unit": "g",
+                    "percentOfDailyNeeds": 3.91
+                }
+            ],
+            "caloricBreakdown": {
+                "percentCarbs": 20.05,
+                "percentFat": 73.58,
+                "percentProtein": 6.37
+            }
     }
 ```
 

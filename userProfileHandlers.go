@@ -40,3 +40,22 @@ func handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
+
+func handleGenerateAlexaAuthToken(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	token := GenerateAlexaAuthToken(req)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(token)
+}
+
+func handleAlexaAuth(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	err := AlexaAuthorize(req)
+
+	w.WriteHeader(http.StatusOK)
+
+	if err != nil {
+		fmt.Fprintln(w, err)
+	}
+}

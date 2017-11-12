@@ -16,6 +16,7 @@ import (
 	"errors"
 	"github.com/karlseguin/ccache"
 	"gopkg.in/zabawaba99/firego.v1"
+	"math/rand"
 )
 
 var (
@@ -421,8 +422,8 @@ func getRecipeDetails(req *http.Request, recipeID string) (Recipe, error) {
 // SaveCurrentRecipeProgress is to save a user's current session for Alexa/Apple Watch (persistence)
 func SaveCurrentRecipeProgress(req *http.Request) error {
 	userID := req.URL.Query().Get("user_id")
-	recipeID := req.URL.Query().Get("recipe_id")
-	step := req.URL.Query().Get("step")
+	recipeID, _ := strconv.Atoi(req.URL.Query().Get("recipe_id"))
+	step, _ := strconv.Atoi(req.URL.Query().Get("step"))
 
 	ctx := appengine.NewContext(req)
 	client := urlfetch.Client(ctx)
@@ -430,7 +431,7 @@ func SaveCurrentRecipeProgress(req *http.Request) error {
 
 	f.Auth(fireToken)
 
-	currentProgress := map[string]string{
+	currentProgress := map[string]int{
 		"recipe_id": recipeID,
 		"step":      step,
 	}
@@ -510,6 +511,84 @@ func DeleteFavoriteRecipe(req *http.Request) error {
 
 	err := f.Child("users/" + userID + "/favorites/" + recipeID).Remove()
 	return err
+}
+
+func GenerateAlexaAuthToken(req *http.Request) int {
+	userID := req.URL.Query().Get("user_id")
+
+	var token int
+	for true {
+		token = 1000 + rand.Intn(9999-1000)
+
+		key := fmt.Sprintf("alexa_id: %d", token)
+
+		item := cache.Get(key)
+		if item == nil {
+			cache.Set(key, userID, time.Minute*5)
+			break
+		} else if item.Expired() {
+			cache.Delete(key)
+		}
+	}
+
+	return token
+}
+
+func AlexaAuthorize(req *http.Request) error {
+	token := req.URL.Query().Get("token")
+	alexa_id := req.URL.Query().Get("alexa_id")
+	key := fmt.Sprintf("alexa_id: " + token)
+
+	item := cache.Get(key)
+
+	if item == nil {
+		return fmt.Errorf("that token doesn't exist")
+	} else if item.Expired() {
+		cache.Delete(key)
+		return fmt.Errorf("that token is expired, please create a new one")
+	}
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	err := f.Child("users/" + item.Value().(string) + "/alexa_id").Set(alexa_id)
+
+	if err != nil {
+		return fmt.Errorf("error writing to Firebase, please try again")
+	}
+
+	cache.Delete(key)
+
+	return nil
+
+}
+
+func GetRecipeForAlexa(w http.ResponseWriter, req *http.Request) (map[string]interface{}, error) {
+	alexaID := req.URL.Query().Get("alexa_id")
+	day := req.URL.Query().Get("day")
+	meal_type := req.URL.Query().Get("meal_type")
+
+	ctx := appengine.NewContext(req)
+	client := urlfetch.Client(ctx)
+	f := firego.New(fireURL, client)
+
+	f.Auth(fireToken)
+
+	var user map[string]interface{}
+	fb := f.Child("users").OrderBy("alexa_id").EqualTo(alexaID)
+
+	err := fb.Value(&user)
+
+	var rec map[string]interface{}
+	for k := range user {
+		f.Child("users/" + k + "/weekly_plan/" + day + "/" + meal_type).Value(&rec)
+		return rec, err
+	}
+
+	return rec, err
 }
 
 // UnmarshalJSON is overwritten for the WeekPlan struct to handle the nested JSON returned from the API gracefully

@@ -29,6 +29,11 @@ func init() {
 	http.HandleFunc("/api/v1/users/get_profile", handleGetProfile)
 	http.HandleFunc("/api/v1/users/update_profile", handleUpdateProfile)
 
+	// Alexa handlers
+	http.HandleFunc("/api/v1/alexa/get_alexa_auth_token", handleGenerateAlexaAuthToken)
+	http.HandleFunc("/api/v1/alexa/authorize_alexa", handleAlexaAuth)
+	http.HandleFunc("/api/v1/alexa/get_recipe_details", handleGetRecipeForAlexa)
+
 	// User favorites handlers
 	http.HandleFunc("/api/v1/users/add_favorite", handleAddFavoriteRecipe)
 	http.HandleFunc("/api/v1/users/get_favorites", handleGetFavoriteRecipes)
